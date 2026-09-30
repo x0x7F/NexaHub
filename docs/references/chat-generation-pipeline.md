@@ -205,7 +205,7 @@ The Live Update notification content updates dynamically with the current genera
 ## Key file paths
 
 ```
-app/src/main/java/me/rerere/rikkahub/
+app/src/main/java/me/ray/nexahub/
 ├── service/
 │   ├── ChatService.kt              # Orchestration entry
 │   └── ConversationSession.kt      # Conversation state container

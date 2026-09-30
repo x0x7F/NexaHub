@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <vector>
 
-#define LOG_TAG "RikkaTermuxJni"
+#define LOG_TAG "NexaTermuxJni"
 
 static char *copy_java_string(JNIEnv *env, jstring value) {
     if (value == nullptr) return nullptr;

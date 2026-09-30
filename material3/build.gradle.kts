@@ -1,9 +1,9 @@
 plugins {
-    id("rikkahub.android.library.compose")
+    id("nexahub.android.library.compose")
 }
 
 android {
-    namespace = "me.rerere.material3"
+    namespace = "me.ray.nexahub.material3"
     sourceSets {
         named("main") {
             kotlin.srcDir("material-color-utilities/kotlin")

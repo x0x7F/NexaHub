@@ -1,10 +1,10 @@
 plugins {
-    id("rikkahub.android.library")
+    id("nexahub.android.library")
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "me.rerere.workspace"
+    namespace = "me.ray.nexahub.workspace"
 
     defaultConfig {
         externalNativeBuild {

@@ -1,10 +1,10 @@
 plugins {
-    id("rikkahub.android.library")
+    id("nexahub.android.library")
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "me.rerere.oauth"
+    namespace = "me.ray.nexahub.oauth"
 }
 
 dependencies {

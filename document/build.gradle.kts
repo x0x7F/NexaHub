@@ -1,9 +1,9 @@
 plugins {
-    id("rikkahub.android.library")
+    id("nexahub.android.library")
 }
 
 android {
-    namespace = "me.rerere.document"
+    namespace = "me.ray.nexahub.document"
 
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")

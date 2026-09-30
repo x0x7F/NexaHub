@@ -1,0 +1,124 @@
+package me.ray.nexahub.data.ai.transformers
+
+import android.util.Log
+import kotlinx.coroutines.CancellationException
+import me.ray.nexahub.ai.core.MessageRole
+import me.ray.nexahub.ai.ui.UIMessage
+import me.ray.nexahub.ai.ui.UIMessagePart
+import me.ray.nexahub.data.db.entity.WorkspaceEntity
+import me.ray.nexahub.data.repository.WorkspaceRepository
+import me.ray.nexahub.workspace.WorkspaceShellStatus
+import java.io.ByteArrayOutputStream
+import java.nio.file.Paths
+
+/**
+ * Workspace system prompt injection transformer
+ *
+ * When the assistant is bound to a workspace whose shell is ready, append guidance to the system prompt
+ * so the model understands the workspace environment and how to use the workspace_* tools.
+ * Also reads AGENTS.md from ~/.agents, /workspace and the session's current directory as workspace instructions.
+ */
+class WorkspaceReminderTransformer(
+    private val workspaceRepository: WorkspaceRepository,
+) : InputMessageTransformer {
+    override suspend fun transform(
+        ctx: TransformerContext,
+        messages: List<UIMessage>,
+    ): List<UIMessage> {
+        val workspaceId = ctx.assistant.workspaceId?.toString() ?: return messages
+        val workspace = workspaceRepository.getById(workspaceId) ?: return messages
+        // Consistent with ChatToolFactory.createWorkspaceToolsIfReady: only inject when the shell is ready
+        if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return messages
+
+        val prompt = buildWorkspacePrompt(workspace, ctx.workspaceCwd) +
+            buildAgentsPrompt(workspaceId, ctx.workspaceCwd)
+
+        // Append to the first system message; insert one if none exists
+        val systemIndex = messages.indexOfFirst { it.role == MessageRole.SYSTEM }
+        return if (systemIndex >= 0) {
+            messages.toMutableList().apply {
+                this[systemIndex] = this[systemIndex]
+                    .appendText("\n\n$prompt")
+                    .copy(isSynthetic = true)
+            }
+        } else {
+            listOf(UIMessage.system(prompt).copy(isSynthetic = true)) + messages
+        }
+    }
+
+    private suspend fun buildAgentsPrompt(workspaceId: String, cwd: String?): String {
+        // ProotShellRunner fixes HOME at /root; a relative PWD is resolved against /workspace.
+        val workingDirectory = Paths.get("/workspace")
+            .resolve(cwd?.takeIf { it.isNotBlank() } ?: ".")
+            .normalize()
+        val paths = linkedSetOf(
+            "/root/.agents/AGENTS.md",
+            "/workspace/AGENTS.md",
+            workingDirectory.resolve("AGENTS.md").toString(),
+        )
+        val instructions = paths.mapNotNull { path ->
+            try {
+                val size = workspaceRepository.rootfsFileSize(workspaceId, path)
+                require(size <= MAX_AGENTS_BYTES) { "AGENTS.md exceeds $MAX_AGENTS_BYTES bytes" }
+                val content = ByteArrayOutputStream().use { output ->
+                    workspaceRepository.exportRootfsFile(workspaceId, path, output)
+                    output.toString(Charsets.UTF_8.name())
+                }
+                content.takeIf { it.isNotBlank() }?.let { path to it }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.d("WorkspaceReminder", "Skipping workspace instructions: $path", e)
+                null
+            }
+        }
+        if (instructions.isEmpty()) return ""
+        return buildString {
+            appendLine()
+            appendLine()
+            appendLine("<workspace_instructions>")
+            appendLine("Follow the AGENTS.md instructions below.")
+            instructions.forEach { (path, content) ->
+                appendLine()
+                appendLine("AGENTS.md source: $path")
+                appendLine(content)
+            }
+            append("</workspace_instructions>")
+        }
+    }
+
+    private companion object {
+        const val MAX_AGENTS_BYTES = 64L * 1024
+    }
+}
+
+private fun buildWorkspacePrompt(workspace: WorkspaceEntity, cwd: String? = null): String = buildString {
+    appendLine("<workspace>")
+    appendLine("You have access to a persistent Linux workspace named \"${workspace.name}\", running in a sandboxed proot rootfs environment.")
+    appendLine("- The workspace files area is mounted at `/workspace`. Use it as your working directory; files written there persist across turns of this conversation.")
+    appendLine("- All paths passed to workspace tools must be absolute and inside the Rootfs (for example `/workspace/notes.md`).")
+    appendLine("- Available tools:")
+    appendLine("  - `workspace_read_file`: read file contents.")
+    appendLine("  - `workspace_write_file` / `workspace_edit_file`: create files, or make precise edits to existing files.")
+    appendLine("  - `workspace_shell`: run shell commands (the files area is mounted at /workspace).")
+    appendLine("- Prefer `workspace_shell` for tasks that standard Unix tools handle well, and prefer `workspace_edit_file` for targeted edits over rewriting whole files.")
+    appendLine("- The skills directory is mounted at `/skills`. Each skill is a subdirectory `/skills/<skill-name>/` containing a `SKILL.md` (with `name` and `description` frontmatter) plus any supporting files. Read a skill's `SKILL.md` before using it, and follow its instructions.")
+    appendLine("- Built-in skills shipped with the app are mounted at `/builtin_skills/<skill-name>/` with the same layout. Treat `/builtin_skills` as READ-ONLY: you may read files and run scripts there, but never modify, overwrite, or delete anything. A skill in `/skills` with the same name overrides the built-in one.")
+    appendLine("- Files the user uploaded are mounted at `/upload`. Treat `/upload` as READ-ONLY: read uploaded files from `/upload/<file-name>`, but never modify, overwrite, or delete anything there. If you need to change an uploaded file, copy it into `/workspace` first and edit the copy.")
+    if (!cwd.isNullOrBlank()) {
+        appendLine("- Current working directory: `$cwd`. Use this as the default context for file operations and shell commands.")
+    }
+    append("</workspace>")
+}
+
+private fun UIMessage.appendText(extra: String): UIMessage {
+    val updatedParts = parts.toMutableList()
+    val firstTextIndex = updatedParts.indexOfFirst { it is UIMessagePart.Text }
+    if (firstTextIndex >= 0) {
+        val text = updatedParts[firstTextIndex] as UIMessagePart.Text
+        updatedParts[firstTextIndex] = text.copy(text = text.text + extra)
+    } else {
+        updatedParts.add(UIMessagePart.Text(extra))
+    }
+    return copy(parts = updatedParts)
+}

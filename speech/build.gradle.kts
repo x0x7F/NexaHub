@@ -1,12 +1,12 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("rikkahub.android.library.compose")
+    id("nexahub.android.library.compose")
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "me.rerere.speech"
+    namespace = "me.ray.nexahub.speech"
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")

@@ -13,7 +13,7 @@ Run the following command in the project root to initialize submodules:
 git submodule update --init --recursive
 ```
 
-Note: run this command from the root of the git repository (`rikkahub/`), not from the `src/main/cpp/mnn` directory.
+Note: run this command from the root of the git repository (`nexahub/`), not from the `src/main/cpp/mnn` directory.
 
 ## Building libMNN.so
 

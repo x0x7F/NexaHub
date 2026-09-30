@@ -11,11 +11,11 @@ dependencies {
 gradlePlugin {
     plugins {
         register("androidLibrary") {
-            id = "rikkahub.android.library"
+            id = "nexahub.android.library"
             implementationClass = "AndroidLibraryConventionPlugin"
         }
         register("androidLibraryCompose") {
-            id = "rikkahub.android.library.compose"
+            id = "nexahub.android.library.compose"
             implementationClass = "AndroidLibraryComposeConventionPlugin"
         }
     }

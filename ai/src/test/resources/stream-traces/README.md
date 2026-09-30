@@ -14,7 +14,7 @@ After recording a new trace, regenerate the semantic snapshot by running this co
 
 ```bash
 UPDATE_STREAM_TRACE_SNAPSHOTS=true ../gradlew testDebugUnitTest \
-  --tests me.rerere.ai.provider.stream.StreamTraceReplayTest
+  --tests me.ray.nexahub.ai.provider.stream.StreamTraceReplayTest
 ```
 
 Snapshots keep tool call IDs, full metadata, thinking text, tool names and arguments, and token usage. Image data stays in

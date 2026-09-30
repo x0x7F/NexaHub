@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "me.rerere.baselineprofile"
+    namespace = "me.ray.nexahub.baselineprofile"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1

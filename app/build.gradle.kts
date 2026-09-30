@@ -13,7 +13,7 @@ plugins {
 }
 
 android {
-    namespace = "me.rerere.rikkahub"
+    namespace = "me.ray.nexahub"
     compileSdk {
         version = release(37) {
             minorApiLevel = 2
@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "me.rerere.rikkahub"
+        applicationId = "me.ray.nexahub"
         minSdk = 26
         targetSdk = 37
         versionCode = 190

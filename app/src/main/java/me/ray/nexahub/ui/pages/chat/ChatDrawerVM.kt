@@ -1,0 +1,195 @@
+package me.ray.nexahub.ui.pages.chat
+
+import android.app.Application
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.insertSeparators
+import androidx.paging.map
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import me.ray.nexahub.R
+import me.ray.nexahub.data.datastore.SettingsStore
+import me.ray.nexahub.data.model.Folder
+import me.ray.nexahub.data.repository.ConversationRepository
+import me.ray.nexahub.data.repository.FolderRepository
+import me.ray.nexahub.service.ChatService
+import me.ray.nexahub.utils.toLocalString
+import java.time.LocalDate
+import java.time.ZoneId
+import kotlin.uuid.Uuid
+
+class ChatDrawerVM(
+    private val context: Application,
+    private val settingsStore: SettingsStore,
+    conversationRepo: ConversationRepository,
+    private val folderRepo: FolderRepository,
+    private val chatService: ChatService,
+    private val savedStateHandle: SavedStateHandle,
+) : ViewModel() {
+
+    private val assistantIdFlow = settingsStore.settingsFlow
+        .map { it.assistantId }
+        .distinctUntilChanged()
+
+    // The currently selected folder filter; null means the "Uncategorized" view
+    private val _selectedFolderId = MutableStateFlow<Uuid?>(null)
+    val selectedFolderId: StateFlow<Uuid?> = _selectedFolderId.asStateFlow()
+
+    // Folder list of the current assistant (Room Flow, refreshes automatically on changes)
+    val folders: StateFlow<List<Folder>> = assistantIdFlow
+        .flatMapLatest { folderRepo.getFoldersOfAssistant(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val conversations: Flow<PagingData<ConversationListItem>> =
+        combine(assistantIdFlow, _selectedFolderId) { assistantId, folderId ->
+            assistantId to folderId
+        }
+            .flatMapLatest { (assistantId, folderId) ->
+                if (folderId == null) {
+                    conversationRepo.getUnfiledConversationsOfAssistantPaging(assistantId)
+                } else {
+                    conversationRepo.getConversationsOfFolderPaging(folderId)
+                }
+            }
+            .map { pagingData ->
+                pagingData
+                    .map { ConversationListItem.Item(it) }
+                    .insertSeparators<ConversationListItem.Item, ConversationListItem> { before, after ->
+                        when {
+                            before == null && after is ConversationListItem.Item -> {
+                                if (after.conversation.isPinned) {
+                                    ConversationListItem.PinnedHeader
+                                } else {
+                                    val afterDate = after.conversation.updateAt
+                                        .atZone(ZoneId.systemDefault())
+                                        .toLocalDate()
+                                    ConversationListItem.DateHeader(
+                                        date = afterDate,
+                                        label = getDateLabel(afterDate)
+                                    )
+                                }
+                            }
+
+                            before is ConversationListItem.Item && after is ConversationListItem.Item -> {
+                                if (before.conversation.isPinned && !after.conversation.isPinned) {
+                                    val afterDate = after.conversation.updateAt
+                                        .atZone(ZoneId.systemDefault())
+                                        .toLocalDate()
+                                    ConversationListItem.DateHeader(
+                                        date = afterDate,
+                                        label = getDateLabel(afterDate)
+                                    )
+                                } else if (!after.conversation.isPinned) {
+                                    val beforeDate = before.conversation.updateAt
+                                        .atZone(ZoneId.systemDefault())
+                                        .toLocalDate()
+                                    val afterDate = after.conversation.updateAt
+                                        .atZone(ZoneId.systemDefault())
+                                        .toLocalDate()
+
+                                    if (beforeDate != afterDate) {
+                                        ConversationListItem.DateHeader(
+                                            date = afterDate,
+                                            label = getDateLabel(afterDate)
+                                        )
+                                    } else {
+                                        null
+                                    }
+                                } else {
+                                    null
+                                }
+                            }
+
+                            else -> null
+                        }
+                    }
+            }
+            .cachedIn(viewModelScope)
+
+    val scrollIndex: Int get() = savedStateHandle["scrollIndex"] ?: 0
+    val scrollOffset: Int get() = savedStateHandle["scrollOffset"] ?: 0
+
+    init {
+        // Reset the folder filter when switching assistants, going back to the "Chats" view,
+        // so conversations in the previous assistant's folders aren't still shown (folders are groupings within an assistant)
+        viewModelScope.launch {
+            assistantIdFlow.collect {
+                _selectedFolderId.value = null
+            }
+        }
+    }
+
+    fun saveScrollPosition(index: Int, offset: Int) {
+        savedStateHandle["scrollIndex"] = index
+        savedStateHandle["scrollOffset"] = offset
+    }
+
+    fun selectFolder(folderId: Uuid?) {
+        _selectedFolderId.value = folderId
+    }
+
+    fun createFolder(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            val assistantId = assistantIdFlow.first()
+            folderRepo.createFolder(assistantId, trimmed)
+        }
+    }
+
+    fun renameFolder(folderId: Uuid, name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            folderRepo.renameFolder(folderId, trimmed)
+        }
+    }
+
+    /**
+     * Delete a folder. If a conversation in the folder is generating a reply, refuse and return false (the UI shows a message based on this).
+     */
+    fun deleteFolder(folderId: Uuid): Boolean {
+        if (chatService.hasGeneratingConversationInFolder(folderId)) {
+            return false
+        }
+        viewModelScope.launch {
+            // Delete via ChatService: it also clears folderId in the in-memory state of active sessions, so whole-object saves don't write back the deleted folder
+            chatService.deleteFolder(folderId)
+            if (_selectedFolderId.value == folderId) {
+                _selectedFolderId.value = null
+            }
+        }
+        return true
+    }
+
+    fun moveConversationToFolder(conversationId: Uuid, folderId: Uuid?) {
+        viewModelScope.launch {
+            // Move via ChatService: active conversations sync their in-memory state first, so later whole-object saves don't overwrite folder_id
+            chatService.moveConversationToFolder(conversationId, folderId)
+        }
+    }
+
+    private fun getDateLabel(date: LocalDate): String {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+        return when (date) {
+            today -> context.getString(R.string.chat_page_today)
+            yesterday -> context.getString(R.string.chat_page_yesterday)
+            else -> date.toLocalString(date.year != today.year)
+        }
+    }
+}

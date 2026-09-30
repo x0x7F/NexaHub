@@ -1,7 +1,7 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 plugins {
-    id("rikkahub.android.library")
+    id("nexahub.android.library")
 }
 
 val webUiDir = rootProject.layout.projectDirectory.dir("web-ui")
@@ -34,7 +34,7 @@ val buildWebUi = tasks.register<Exec>("buildWebUi") {
 }
 
 android {
-    namespace = "me.rerere.rikkahub.web"
+    namespace = "me.ray.nexahub.web"
 
     defaultConfig {
         minSdk = 24

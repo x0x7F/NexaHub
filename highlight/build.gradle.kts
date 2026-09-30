@@ -1,9 +1,9 @@
 plugins {
-    id("rikkahub.android.library.compose")
+    id("nexahub.android.library.compose")
 }
 
 android {
-    namespace = "me.rerere.highlight"
+    namespace = "me.ray.nexahub.highlight"
 
     defaultConfig {
         minSdk = 24

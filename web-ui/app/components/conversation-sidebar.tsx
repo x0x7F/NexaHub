@@ -1220,12 +1220,12 @@ export const ConversationSidebar = React.memo(
             </DropdownMenu>
 
             <a
-              href="https://rikka-ai.com"
+              href="https://github.com/x0x7F/NexaHub"
               target="_blank"
               rel="noopener noreferrer"
               className="ml-auto text-xs font-normal text-foreground/80 hover:text-foreground transition-colors"
             >
-              RikkaHub
+              NexaHub
             </a>
           </div>
         </SidebarFooter>

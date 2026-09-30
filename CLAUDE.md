@@ -20,7 +20,7 @@ UIMessage, MessageNode, Message Transformers) and i18n rules. This file adds onl
 ./gradlew assembleDebug                          # debug APK
 ./gradlew test                                   # all JVM unit tests
 ./gradlew :ai:testDebugUnitTest                  # one module's tests
-./gradlew :ai:testDebugUnitTest --tests "me.rerere.ai.provider.providers.claude.ClaudeRequestMessageTest"
+./gradlew :ai:testDebugUnitTest --tests "me.ray.nexahub.ai.provider.providers.claude.ClaudeRequestMessageTest"
 ./gradlew :app:testDebugUnitTest --tests "*SomeTest.someMethod"       # single test method (wildcards ok)
 ./gradlew lint
 ```
@@ -40,7 +40,12 @@ Additional Gradle modules not listed in AGENTS.md: `videogen` (async video-gener
 ## Architecture
 
 - **Stack**: Kotlin, Jetpack Compose, Koin DI (`app/.../di/*Module.kt`), Room, DataStore, Navigation 3
-  (`NavDisplay` in `RouteActivity.kt`), OkHttp, kotlinx.serialization. Package root: `me.rerere.rikkahub`.
+  (`NavDisplay` in `RouteActivity.kt`), OkHttp, kotlinx.serialization. Package root: `me.ray.nexahub`.
+  Library modules use `me.ray.nexahub.<module>` (e.g. `me.ray.nexahub.ai`, `.search`, `.tts`/`.asr` in `speech`).
+- **Legacy `me.rerere.*` strings are intentional**: the string literals in `data/datastore/migration/` and
+  `data/db/migrations/MigrationUtils.kt`, and the `@SerialName`s on `data/model/Avatar.kt`, match class names that
+  the original RikkaHub app persisted. Don't rename them, or old settings and backups stop decoding. The
+  `me.rerere.hugeicons` imports come from an external library and must also stay.
 - **Provider layer (`ai`)**: `ProviderManager` selects a `Provider` implementation (`provider/providers/{openai,
   google,claude}`) from a `ProviderSetting`; each converts `UIMessage`s to the vendor wire format and parses
   streaming responses back into `UIMessage` chunks. `registry/ModelRegistry` + `ModelDsl` describe known models'
