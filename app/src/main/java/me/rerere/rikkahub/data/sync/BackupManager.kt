@@ -25,7 +25,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
-/** Shared archive format and restore lifecycle for local, WebDAV and S3 backups. */
+/** Archive format and restore lifecycle for local backups. */
 class BackupManager(
     private val context: Context,
     private val database: AppDatabase,

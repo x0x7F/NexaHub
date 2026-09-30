@@ -33,7 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.R
-import me.rerere.rikkahub.data.datastore.WebDavConfig
+import me.rerere.rikkahub.data.datastore.BackupItem
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.StickyHeader
 import me.rerere.rikkahub.ui.context.LocalToaster
@@ -197,11 +197,11 @@ fun ImportExportTab(
                         MultiChoiceSegmentedButtonRow(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            WebDavConfig.BackupItem.entries.forEachIndexed { index, item ->
+                            BackupItem.entries.forEachIndexed { index, item ->
                                 SegmentedButton(
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index = index,
-                                        count = WebDavConfig.BackupItem.entries.size
+                                        count = BackupItem.entries.size
                                     ),
                                     onCheckedChange = { checked ->
                                         val newItems = if (checked) {
@@ -215,8 +215,8 @@ fun ImportExportTab(
                                 ) {
                                     Text(
                                         when (item) {
-                                            WebDavConfig.BackupItem.DATABASE -> stringResource(R.string.backup_page_chat_records)
-                                            WebDavConfig.BackupItem.FILES -> stringResource(R.string.backup_page_files)
+                                            BackupItem.DATABASE -> stringResource(R.string.backup_page_chat_records)
+                                            BackupItem.FILES -> stringResource(R.string.backup_page_files)
                                         }
                                     )
                                 }

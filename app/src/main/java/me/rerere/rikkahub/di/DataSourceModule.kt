@@ -1,11 +1,8 @@
 package me.rerere.rikkahub.di
 
 import android.content.Context
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.http.HttpHeaders
 import io.pebbletemplates.pebble.PebbleEngine
-import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.common.http.AcceptLanguageBuilder
 import me.rerere.rikkahub.BuildConfig
@@ -15,8 +12,6 @@ import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.GenerationLoop
 import me.rerere.rikkahub.data.ai.TranslationHandler
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
-import me.rerere.rikkahub.data.api.RikkaHubAPI
-import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.sync.BackupManager
 import me.rerere.rikkahub.data.db.AppDatabaseFactory
@@ -26,15 +21,10 @@ import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.network.SettingsProxySelector
 import me.rerere.rikkahub.data.network.SettingsProxyAuthenticator
 import me.rerere.rikkahub.data.network.SettingsSocks5Authenticator
-import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.search.SearchService
-import me.rerere.rikkahub.data.sync.S3Sync
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -188,54 +178,8 @@ val dataSourceModule = module {
     }
 
     single {
-        SponsorAPI.create(get())
-    }
-
-    single {
         ProviderManager(client = get(), context = get())
     }
 
     single { BackupManager(context = get(), database = get(), settingsStore = get(), json = get()) }
-
-    single {
-        WebDavSync(
-            backupManager = get(),
-            context = get(),
-            httpClient = get()
-        )
-    }
-
-    single<HttpClient> {
-        HttpClient(OkHttp) {
-            engine {
-                config {
-                    connectTimeout(20, TimeUnit.SECONDS)
-                    readTimeout(10, TimeUnit.MINUTES)
-                    writeTimeout(120, TimeUnit.SECONDS)
-                    followSslRedirects(true)
-                    followRedirects(true)
-                    retryOnConnectionFailure(true)
-                }
-            }
-        }
-    }
-
-    single {
-        S3Sync(
-            backupManager = get(),
-            context = get(),
-            httpClient = get()
-        )
-    }
-
-    single<Retrofit> {
-        Retrofit.Builder()
-            .baseUrl("https://api.rikka-ai.com")
-            .addConverterFactory(get<Json>().asConverterFactory("application/json; charset=UTF8".toMediaType()))
-            .build()
-    }
-
-    single<RikkaHubAPI> {
-        get<Retrofit>().create(RikkaHubAPI::class.java)
-    }
 }
