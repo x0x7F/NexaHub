@@ -53,7 +53,7 @@ fun ShareSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("共享你的LLM模型", style = MaterialTheme.typography.titleLarge)
+                    Text("Share your LLM model", style = MaterialTheme.typography.titleLarge)
 
                     IconButton(
                         onClick = {
@@ -99,10 +99,10 @@ fun ProviderSetting.encodeForShare(): String {
 fun decodeProviderSetting(value: String): ProviderSetting {
     require(value.startsWith("ai-provider:v1:")) { "Invalid provider setting string" }
 
-    // 去掉前缀
+    // Strip the prefix
     val base64Str = value.removePrefix("ai-provider:v1:")
 
-    // Base64解码
+    // Base64 decode
     val jsonBytes = Base64.decode(base64Str)
     val jsonStr = jsonBytes.decodeToString()
 

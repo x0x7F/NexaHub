@@ -24,28 +24,25 @@ def translator():
 
 
 @pytest.mark.asyncio
-async def test_prompt_translates_to_tishici(translator):
-    """'prompt' 在 AI/LLM 上下文中应翻译为'提示词'而非'提示'。"""
+async def test_prompt_uses_glossary_term(translator):
+    """'prompt' should use the Arabic glossary term, not a generic word."""
     result = await translator.translate_batch(
         {"system_prompt": "System Prompt", "prompt_template": "Prompt Template"},
-        "Chinese (Simplified)",
+        "Arabic",
     )
     assert "system_prompt" in result
     assert "prompt_template" in result
-    assert "提示词" in result["system_prompt"], (
-        f"Expected '提示词' in system_prompt translation, got: {result['system_prompt']!r}"
-    )
-    assert "提示词" in result["prompt_template"], (
-        f"Expected '提示词' in prompt_template translation, got: {result['prompt_template']!r}"
+    assert "مطالبة" in result["system_prompt"], (
+        f"Expected 'مطالبة' in system_prompt translation, got: {result['system_prompt']!r}"
     )
 
 
 @pytest.mark.asyncio
 async def test_placeholder_preserved(translator):
-    """Android 占位符 %1$s / %s 不应被翻译或修改。"""
+    """Android placeholders %1$s / %s must not be translated or modified."""
     result = await translator.translate_batch(
         {"welcome_user": "Welcome, %1$s!", "items_count": "You have %d items"},
-        "Chinese (Simplified)",
+        "Japanese",
     )
     assert "%1$s" in result["welcome_user"], (
         f"Placeholder %1$s missing in: {result['welcome_user']!r}"
@@ -57,10 +54,10 @@ async def test_placeholder_preserved(translator):
 
 @pytest.mark.asyncio
 async def test_brand_name_not_translated(translator):
-    """品牌名 'OpenAI'、'Anthropic'、'Google' 不应被翻译。"""
+    """Brand names 'OpenAI', 'Anthropic' and 'Google' must not be translated."""
     result = await translator.translate_batch(
         {"provider_openai": "OpenAI Provider", "provider_anthropic": "Anthropic Provider"},
-        "Chinese (Simplified)",
+        "Japanese",
     )
     assert "OpenAI" in result["provider_openai"], (
         f"Brand name 'OpenAI' should be preserved, got: {result['provider_openai']!r}"
@@ -72,10 +69,10 @@ async def test_brand_name_not_translated(translator):
 
 @pytest.mark.asyncio
 async def test_token_not_over_translated(translator):
-    """'Token' 在 LLM 上下文中应保留英文或译为 'Token'，不应译为'令牌'等无关词。"""
+    """'Token' should stay in English in the LLM context, not be translated into an unrelated word."""
     result = await translator.translate_batch(
         {"token_usage": "Token Usage", "max_tokens": "Max Tokens"},
-        "Chinese (Simplified)",
+        "Japanese",
     )
     for key in ("token_usage", "max_tokens"):
         val = result[key].lower()
@@ -86,13 +83,13 @@ async def test_token_not_over_translated(translator):
 
 @pytest.mark.asyncio
 async def test_keys_preserved_in_response(translator):
-    """返回 JSON 的 key 必须与输入一一对应。"""
+    """The keys of the returned JSON must match the input one to one."""
     entries = {
         "setting_title": "Settings",
         "cancel_button": "Cancel",
         "confirm_button": "Confirm",
     }
-    result = await translator.translate_batch(entries, "Chinese (Simplified)")
+    result = await translator.translate_batch(entries, "Japanese")
     assert set(result.keys()) == set(entries.keys()), (
         f"Response keys mismatch. Expected {set(entries.keys())}, got {set(result.keys())}"
     )
@@ -100,8 +97,8 @@ async def test_keys_preserved_in_response(translator):
 
 @pytest.mark.asyncio
 async def test_non_empty_translations(translator):
-    """每个 key 翻译结果不能为空字符串。"""
-    entries = {"app_name": "RikkaHub", "loading": "Loading..."}
-    result = await translator.translate_batch(entries, "Chinese (Simplified)")
+    """No key may be translated to an empty string."""
+    entries = {"app_name": "NexaHub", "loading": "Loading..."}
+    result = await translator.translate_batch(entries, "Japanese")
     for key, val in result.items():
         assert val and val.strip(), f"Translation for {key!r} is empty"

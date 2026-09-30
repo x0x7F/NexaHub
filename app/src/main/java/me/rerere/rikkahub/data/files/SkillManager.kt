@@ -33,7 +33,7 @@ class SkillManager(
     }
 
     /**
-     * 确保内置技能已从 assets 解压到 [getBuiltinSkillsDir]，每个进程只检查一次。
+     * Ensures the built-in skills have been extracted from assets to [getBuiltinSkillsDir]; checked only once per process.
      */
     fun ensureBuiltinSkillsExtracted() {
         if (builtinExtracted) return
@@ -49,7 +49,7 @@ class SkillManager(
     }
 
     /**
-     * 列出所有可用技能：用户技能 + 内置技能，同名时用户技能覆盖内置技能。
+     * List all available skills: user skills + built-in skills; a user skill overrides a built-in skill with the same name.
      */
     fun listSkills(): List<SkillMetadata> = mergeWithBuiltinSkills(
         local = listSkillsIn(getSkillsDir(), builtin = false),
@@ -65,7 +65,7 @@ class SkillManager(
 
     private fun listSkillsIn(root: File, builtin: Boolean): List<SkillMetadata> {
         return root.listFiles()
-            // 跳过隐藏目录，如原子写入残留的 .<name>.staging.N.tmp
+            // Skip hidden directories, such as .<name>.staging.N.tmp left over from atomic writes
             ?.filter { it.isDirectory && !it.name.startsWith(".") }
             ?.mapNotNull { dir ->
                 val skillFile = dir.resolve("SKILL.md")
@@ -88,8 +88,8 @@ class SkillManager(
     }
 
     fun saveSkill(name: String, content: String): SkillMetadata? {
-        // 通过原子写入(staging + rename)落盘，避免直接 mkdirs 失败时
-        // writeText 抛出 FileNotFoundException 导致崩溃
+        // Write to disk atomically (staging + rename), so that when mkdirs fails
+        // writeText doesn't throw FileNotFoundException and crash
         if (!saveSkillFileBytesAtomically(name, mapOf("SKILL.md" to content.toByteArray()))) {
             return null
         }
@@ -99,10 +99,10 @@ class SkillManager(
 
     suspend fun deleteSkill(name: String): Boolean = withContext(Dispatchers.IO) {
         val skillDir = resolveSkillDir(name) ?: return@withContext false
-        // 目录不存在时 deleteRecursively 也返回 true，需提前拦截，避免误清理内置技能的启用状态
+        // deleteRecursively also returns true when the directory doesn't exist, so intercept early to avoid wrongly clearing a built-in skill's enabled state
         if (!skillDir.exists()) return@withContext false
         val deleted = skillDir.deleteRecursively()
-        // 删除的是覆盖内置技能的同名用户技能时，内置技能会重新生效，保留启用状态
+        // When deleting a user skill that overrides a built-in skill of the same name, the built-in skill takes effect again, so keep the enabled state
         if (deleted && listBuiltinSkills().none { it.name == name }) {
             settingsStore.update { settings ->
                 settings.copy(
@@ -120,10 +120,10 @@ class SkillManager(
     }
 
     /**
-     * 清理所有助手 enabledSkills 中已不存在于磁盘的技能名。
+     * Removes skill names that no longer exist on disk from every assistant's enabledSkills.
      *
-     * 当用户在 App 外直接删除 /skills/ 目录下的技能时，不会走 [deleteSkill] 的清理逻辑，
-     * 导致 enabledSkills 残留"幽灵"技能名，使扩展入口角标计数偏大。
+     * When the user deletes a skill from the /skills/ directory outside the app, the cleanup in [deleteSkill] doesn't run,
+     * leaving "ghost" skill names in enabledSkills and inflating the badge count on the extensions entry.
      */
     suspend fun pruneOrphanedEnabledSkills(): List<SkillMetadata> = withContext(Dispatchers.IO) {
         val skills = listSkills()
@@ -150,8 +150,8 @@ class SkillManager(
         val skillDir = resolveSkillDir(skillName) ?: return false
         val target = SkillPaths.resolveSkillFile(skillDir, relativePath) ?: return false
         val parent = target.parentFile ?: return false
-        // 先写同目录临时文件再 rename 覆盖，避免写到一半失败时损坏原文件；
-        // IO 异常（如 mkdirs 失败导致 FileNotFoundException）转为返回 false，不向调用方抛出
+        // Write a temp file in the same directory and rename it over, so a failure midway doesn't corrupt the original;
+        // IO exceptions (e.g. FileNotFoundException from a failed mkdirs) return false instead of propagating to the caller
         val tempFile = parent.resolve(".${target.name}.tmp")
         return try {
             if (!parent.exists() && !parent.mkdirs()) return false
@@ -260,7 +260,7 @@ data class SkillMetadata(
     val description: String,
     val compatibility: String? = null,
     val skillDir: File,
-    /** 内置技能，来自 assets 解压，只读 */
+    /** Built-in skill, extracted from assets, read-only */
     val builtin: Boolean = false,
 ) {
     val skillFile: File get() = skillDir.resolve("SKILL.md")

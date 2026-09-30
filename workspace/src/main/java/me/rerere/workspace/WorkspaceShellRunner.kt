@@ -36,7 +36,7 @@ class HostShellRunner : WorkspaceShellRunner {
         if (File("/system/bin/sh").exists()) "/system/bin/sh" else "/bin/sh"
 }
 
-// 单个流保留的最大字符数, 防止命令疯狂输出导致 OOM 或撑爆 LLM 上下文
+// Maximum characters kept per stream, so runaway command output can't cause OOM or blow up the LLM context
 const val MAX_OUTPUT_CHARS = 128 * 1024
 
 fun Process.readResult(timeoutMillis: Long, stdin: ByteArray? = null): WorkspaceCommandResult {
@@ -44,12 +44,12 @@ fun Process.readResult(timeoutMillis: Long, stdin: ByteArray? = null): Workspace
     val stderr = StreamCollector(errorStream)
     val stdinWriter = stdin?.let { bytes -> StreamWriter(outputStream, bytes) }
     if (stdinWriter == null) {
-        // 没有 stdin 输入时立即关闭管道, 让子进程读到 EOF;
-        // 否则 cat/gh/kubectl 等按 isatty 判断的工具会把这根永不写入的管道当成待输入流而永久阻塞
+        // With no stdin input, close the pipe immediately so the child process reads EOF;
+        // otherwise tools that check isatty, such as cat/gh/kubectl, would treat the never-written pipe as pending input and block forever
         try {
             outputStream.close()
         } catch (_: IOException) {
-            // 子进程已提前退出导致管道关闭, 忽略
+            // The pipe closed because the child already exited; ignore
         }
     }
     try {
@@ -68,9 +68,9 @@ fun Process.readResult(timeoutMillis: Long, stdin: ByteArray? = null): Workspace
             truncated = stdout.truncated || stderr.truncated,
         )
     } catch (e: InterruptedException) {
-        // 调用方线程被中断（如协程取消时的 runInterruptible），杀掉进程避免命令继续执行
+        // The caller thread was interrupted (e.g. runInterruptible on coroutine cancellation); kill the process so the command doesn't keep running
         destroyForcibly()
-        // 进程被杀后 stdout/stderr 会关闭, 这里 join 回收两个采集线程, 避免每次取消泄漏一对线程
+        // After the process is killed stdout/stderr close; join the two reader threads here so each cancellation doesn't leak a pair of threads
         stdinWriter?.join(1_000)
         stdout.join(1_000)
         stderr.join(1_000)
@@ -89,7 +89,7 @@ private class StreamWriter(
                 output.flush()
             }
         } catch (_: IOException) {
-            // 子进程提前退出或被强杀时 stdin 可能关闭, 忽略即可, 退出状态会由进程本身返回
+            // stdin may be closed when the child exits early or is killed; ignore it, the exit status comes from the process itself
         }
     }.apply {
         isDaemon = true
@@ -116,7 +116,7 @@ private class StreamCollector(
                 while (true) {
                     val read = reader.read(buffer)
                     if (read < 0) break
-                    // 超出上限后继续读到 EOF 并丢弃，否则管道写满会阻塞子进程导致其无法退出
+                    // After the limit, keep reading to EOF and discard, otherwise a full pipe would block the child and keep it from exiting
                     synchronized(builder) {
                         val remaining = maxChars - builder.length
                         if (remaining > 0) {
@@ -129,11 +129,11 @@ private class StreamCollector(
                 }
             }
         } catch (_: IOException) {
-            // 进程被强杀（超时/取消）时流会被关闭，阻塞中的 read 会抛 InterruptedIOException 等，
-            // 保留已读取的内容即可；不能让异常逃逸，否则会触发线程默认异常处理导致应用崩溃
+            // When the process is killed (timeout/cancellation) the streams close and a blocked read throws InterruptedIOException, etc.;
+            // keep what's been read; the exception must not escape, or it triggers the thread's default exception handler and crashes the app
         }
     }.apply {
-        // 设为 daemon: 即使 proot grandchild 残留 fd 导致 read() 永久阻塞, 也不会阻止 JVM 退出
+        // Make it a daemon: even if a proot grandchild keeps an fd open and read() blocks forever, it won't keep the JVM from exiting
         isDaemon = true
         start()
     }

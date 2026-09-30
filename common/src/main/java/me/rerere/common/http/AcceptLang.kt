@@ -3,13 +3,13 @@ package me.rerere.common.http
 import java.util.Locale
 
 /**
- * 构建 Accept-Language 头值的实用类。
+ * Utility for building Accept-Language header values.
  *
- * 主要特性：
- * 1) 支持 Android 和 JVM 环境的系统语言获取。
- * 2) 支持将 "zh-CN" 展开为 ["zh-CN", "zh"]（可配置）。
- * 3) 去重并按优先级降权生成 q 参数（IETF RFC 7231）。
- * 4) 结果形如： "zh-CN, zh;q=0.9, en-US;q=0.8, en;q=0.7"
+ * Key features:
+ * 1) Reads the system languages on both Android and the JVM.
+ * 2) Expands "zh-CN" into ["zh-CN", "zh"] (configurable).
+ * 3) Deduplicates and generates decreasing q parameters by priority (IETF RFC 7231).
+ * 4) The result looks like: "zh-CN, zh;q=0.9, en-US;q=0.8, en;q=0.7"
  */
 class AcceptLanguageBuilder private constructor(
     private val localesInPreference: List<Locale>,
@@ -17,41 +17,41 @@ class AcceptLanguageBuilder private constructor(
 ) {
 
     data class Options(
-        /** 参与生成的语言标签最多个数（去重后再截断）。*/
+        /** Maximum number of language tags used (truncated after deduplication). */
         val maxLanguages: Int = 6,
-        /** 从 1.0 起，每个后续条目的 q 递减步长（0 < step <= 1）。*/
+        /** Step by which q decreases for each subsequent entry, starting from 1.0 (0 < step <= 1). */
         val qStep: Double = 0.1,
-        /** q 的下限（包含）；若递减到更低则夹到该下限。*/
+        /** Lower bound of q (inclusive); values that would go lower are clamped to it. */
         val minQ: Double = 0.1,
-        /** 是否为地区化语言添加“通用语言码”，如 "zh-CN" 追加 "zh"。*/
+        /** Whether to add the "generic language code" for regional languages, e.g. append "zh" for "zh-CN". */
         val includeGenericLanguage: Boolean = true,
-        /** 是否对标签去重（保持首次出现的顺序）。*/
+        /** Whether to deduplicate tags (keeping first-occurrence order). */
         val deduplicate: Boolean = true
     )
 
     companion object {
-        /** 直接从 JVM（桌面/服务器）系统环境创建。*/
+        /** Create directly from the JVM (desktop/server) system environment. */
         fun fromJvmSystem(options: Options = Options()): AcceptLanguageBuilder {
             val primary = Locale.getDefault()
-            // JVM 通常只提供一个主 Locale；如果需要自定义列表，可自行传入 withLocales。
+            // The JVM usually provides only one primary Locale; pass withLocales yourself if you need a custom list.
             return AcceptLanguageBuilder(listOf(primary), options)
         }
 
         /**
-         * 从 Android 系统环境创建。
-         * @param context 建议传入应用或当前上下文，以获取用户“应用内语言”/系统语言首选列表
+         * Create from the Android system environment.
+         * @param context preferably the application or current context, to get the user's "per-app language" / system language preference list
          */
         fun fromAndroid(context: android.content.Context, options: Options = Options()): AcceptLanguageBuilder {
             val locales = systemLocalesAndroid(context)
             return AcceptLanguageBuilder(locales, options)
         }
 
-        /** 使用调用方自定义的 Locale 列表（按优先顺序）创建。*/
+        /** Create from a caller-provided Locale list (in priority order). */
         fun withLocales(locales: List<Locale>, options: Options = Options()): AcceptLanguageBuilder {
             return AcceptLanguageBuilder(locales, options)
         }
 
-        // Android 的系统 Locale 列表获取
+        // Get Android's system Locale list
         private fun systemLocalesAndroid(context: android.content.Context): List<Locale> {
             val cfg = context.resources.configuration
             return if (android.os.Build.VERSION.SDK_INT >= 24) {
@@ -63,9 +63,9 @@ class AcceptLanguageBuilder private constructor(
         }
     }
 
-    /** 生成最终的 Accept-Language 头值（不包含 "Accept-Language:" 前缀）。*/
+    /** Generate the final Accept-Language header value (without the "Accept-Language:" prefix). */
     fun build(): String {
-        // 1) 先将 Locale 转成语言标签，并按需展开“通用语言码”
+        // 1) Convert Locales to language tags, expanding "generic language codes" as needed
         val tags = mutableListOf<String>()
         for (loc in localesInPreference) {
             val full = toLanguageTagCompat(loc)
@@ -77,13 +77,13 @@ class AcceptLanguageBuilder private constructor(
             }
         }
 
-        // 2) 去重（保持首次出现顺序）
+        // 2) Deduplicate (keeping first-occurrence order)
         val distinct = if (options.deduplicate) tags.distinct() else tags
 
-        // 3) 截断
+        // 3) Truncate
         val limited = distinct.take(options.maxLanguages.coerceAtLeast(1))
 
-        // 4) 赋予 q 值：第一个 1.0 不写 q，其余按步长递减到 minQ
+        // 4) Assign q values: the first (1.0) has no q, the rest decrease by step down to minQ
         val parts = mutableListOf<String>()
         var q = 1.0
         for ((i, tag) in limited.withIndex()) {
@@ -98,10 +98,10 @@ class AcceptLanguageBuilder private constructor(
         return parts.joinToString(separator = ", ")
     }
 
-    // --- 辅助方法 ---
+    // --- Helpers ---
 
     private fun toLanguageTagCompat(locale: Locale): String {
-        // JVM 7+ 提供 Locale#toLanguageTag；为安全起见仍保底手拼
+        // JVM 7+ provides Locale#toLanguageTag; still build it by hand as a fallback to be safe
         val tag = locale.toLanguageTag()
         if (tag.isNotBlank()) return tag
 
@@ -116,16 +116,16 @@ class AcceptLanguageBuilder private constructor(
         }
     }
 
-    /** 从 "zh-CN" 得到 "zh"；从 "en" 则返回 null（无更通用层级）。*/
+    /** Get "zh" from "zh-CN"; returns null for "en" (no more generic level). */
     private fun genericLanguageOf(tag: String): String? {
         val idx = tag.indexOf('-')
         if (idx <= 0) return null
         val head = tag.substring(0, idx)
-        // 忽略诸如 "zh-Hans-CN" 的更复杂情况，仅退一级即可
+        // Ignore more complex cases such as "zh-Hans-CN"; just go up one level
         return if (head.isNotBlank()) head else null
     }
 
-    /** q 值格式：最多保留 3 位小数，去掉多余 0 与小数点。*/
+    /** q value format: at most 3 decimal places, dropping trailing zeros and the decimal point. */
     private fun formatQ(value: Double): String {
         val s = String.format(java.util.Locale.ROOT, "%.3f", value)
         return s.trimEnd('0').trimEnd('.')

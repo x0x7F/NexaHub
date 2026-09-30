@@ -18,22 +18,22 @@ import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 
 /**
- * 图片处理工具类
- * 提供图片压缩、旋转修正、二维码解析等功能
+ * Image processing utilities
+ * Provides image compression, rotation correction, QR code parsing, etc.
  */
 object ImageUtils {
 
     /**
-     * 优化的图片加载方法，避免OOM
-     * 1. 先获取图片尺寸
-     * 2. 计算合适的采样率
-     * 3. 加载压缩后的图片
-     * 4. 处理图片旋转
+     * Optimized image loading that avoids OOM
+     * 1. Get the image dimensions first
+     * 2. Compute a suitable sample size
+     * 3. Load the downsampled image
+     * 4. Handle image rotation
      *
-     * @param context Android上下文
-     * @param uri 图片URI
-     * @param maxSize 最大尺寸限制，默认1024px
-     * @return 压缩后的Bitmap，失败返回null
+     * @param context Android context
+     * @param uri image URI
+     * @param maxSize maximum size limit, 1024px by default
+     * @return the compressed Bitmap, or null on failure
      */
     fun loadOptimizedBitmap(
         context: Context,
@@ -41,7 +41,7 @@ object ImageUtils {
         maxSize: Int = 1024
     ): Bitmap? {
         return runCatching {
-            // 第一步：获取图片的原始尺寸，不加载到内存
+            // Step 1: get the image's original dimensions without loading it into memory
             val options = BitmapFactory.Options().apply {
                 inJustDecodeBounds = true
             }
@@ -50,20 +50,20 @@ object ImageUtils {
                 BitmapFactory.decodeStream(inputStream, null, options)
             }
 
-            // 计算合适的采样率
+            // Compute a suitable sample size
             val sampleSize = calculateInSampleSize(options, maxSize, maxSize)
 
-            // 第二步：使用采样率加载压缩后的图片
+            // Step 2: load the downsampled image using the sample size
             val loadOptions = BitmapFactory.Options().apply {
                 inSampleSize = sampleSize
-                inPreferredConfig = Bitmap.Config.RGB_565 // 使用RGB_565减少内存占用
+                inPreferredConfig = Bitmap.Config.RGB_565 // Use RGB_565 to reduce memory usage
             }
 
             val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 BitmapFactory.decodeStream(inputStream, null, loadOptions)
             }
 
-            // 第三步：处理图片旋转（如果需要）
+            // Step 3: handle image rotation (if needed)
             bitmap?.let { correctImageOrientation(context, uri, it) }
         }.onFailure {
             it.printStackTrace()
@@ -71,12 +71,12 @@ object ImageUtils {
     }
 
     /**
-     * 计算合适的采样率
+     * Compute a suitable sample size
      *
-     * @param options BitmapFactory.Options包含原始图片尺寸信息
-     * @param reqWidth 目标宽度
-     * @param reqHeight 目标高度
-     * @return 采样率（2的幂）
+     * @param options BitmapFactory.Options containing the original image dimensions
+     * @param reqWidth target width
+     * @param reqHeight target height
+     * @return the sample size (a power of 2)
      */
     fun calculateInSampleSize(
         options: BitmapFactory.Options,
@@ -91,7 +91,7 @@ object ImageUtils {
             val halfHeight = height / 2
             val halfWidth = width / 2
 
-            // 计算最大的inSampleSize值，该值是2的幂，并且保持高度和宽度都大于请求的高度和宽度
+            // Compute the largest inSampleSize that is a power of 2 and keeps both height and width larger than the requested height and width
             while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
                 inSampleSize *= 2
             }
@@ -101,13 +101,13 @@ object ImageUtils {
     }
 
     /**
-     * 修正图片旋转
-     * 根据EXIF信息自动旋转图片到正确方向
+     * Correct image rotation
+     * Automatically rotates the image to the correct orientation based on its EXIF info
      *
-     * @param context Android上下文
-     * @param uri 图片URI
-     * @param bitmap 原始bitmap
-     * @return 旋转后的bitmap
+     * @param context Android context
+     * @param uri image URI
+     * @param bitmap the original bitmap
+     * @return the rotated bitmap
      */
     fun correctImageOrientation(context: Context, uri: Uri, bitmap: Bitmap): Bitmap {
         return runCatching {
@@ -127,12 +127,12 @@ object ImageUtils {
                 ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
                 ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
                 ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
-                else -> return bitmap // 不需要旋转
+                else -> return bitmap // No rotation needed
             }
 
             val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
             if (rotatedBitmap != bitmap) {
-                bitmap.recycle() // 回收原始bitmap
+                bitmap.recycle() // Recycle the original bitmap
             }
             rotatedBitmap
         }.onFailure {
@@ -141,8 +141,8 @@ object ImageUtils {
     }
 
     /**
-     * 判断 uri 指向的图片是否为 HEIF/HEIC 格式
-     * 优先使用 ContentResolver 的 MIME 类型，回退到读取文件头魔数嗅探
+     * Whether the image the uri points to is HEIF/HEIC
+     * Prefers the ContentResolver's MIME type, falling back to sniffing the file header's magic number
      */
     fun isHeifImage(context: Context, uri: Uri): Boolean {
         context.contentResolver.getType(uri)?.lowercase()?.let { mime ->
@@ -160,10 +160,10 @@ object ImageUtils {
     }
 
     /**
-     * 将 HEIF/HEIC 图片解码后重编码为 JPEG 写入 [target]
-     * 用于规避部分组件（如 UCrop）对 HEIF（尤其 HDR HEIF）解码兼容性不佳的问题
+     * Decode a HEIF/HEIC image and re-encode it as JPEG into [target]
+     * Used to work around poor HEIF (especially HDR HEIF) decoding compatibility in some components (such as UCrop)
      *
-     * @return 转换成功返回 true，失败（如系统无法解码 HEIF）返回 false
+     * @return true on success, false on failure (e.g. the system can't decode HEIF)
      */
     fun convertHeifToJpeg(
         context: Context,
@@ -183,7 +183,7 @@ object ImageUtils {
         val decoded = context.contentResolver.openInputStream(uri)?.use { input ->
             BitmapFactory.decodeStream(input, null, loadOptions)
         } ?: return@runCatching false
-        // 将 EXIF 旋转烘焙进像素，输出的 JPEG 不再带方向信息，避免下游二次旋转
+        // Bake the EXIF rotation into the pixels, so the output JPEG has no orientation info and isn't rotated again downstream
         val oriented = correctImageOrientation(context, uri, decoded)
         try {
             target.outputStream().use { output ->
@@ -204,10 +204,10 @@ object ImageUtils {
     )
 
     /**
-     * 从图片中解析二维码
+     * Parse a QR code from an image
      *
-     * @param bitmap 要解析的图片
-     * @return 二维码内容，解析失败返回null
+     * @param bitmap the image to parse
+     * @return the QR code content, or null if parsing fails
      */
     fun decodeQRCodeFromBitmap(bitmap: Bitmap): String? {
         return runCatching {
@@ -229,12 +229,12 @@ object ImageUtils {
     }
 
     /**
-     * 从URI加载图片并解析二维码（组合方法）
+     * Load an image from a URI and parse its QR code (combined method)
      *
-     * @param context Android上下文
-     * @param uri 图片URI
-     * @param maxSize 最大尺寸限制，默认1024px
-     * @return 二维码内容，解析失败返回null
+     * @param context Android context
+     * @param uri image URI
+     * @param maxSize maximum size limit, 1024px by default
+     * @return the QR code content, or null if parsing fails
      */
     fun decodeQRCodeFromUri(
         context: Context,
@@ -245,14 +245,14 @@ object ImageUtils {
         return try {
             decodeQRCodeFromBitmap(bitmap)
         } finally {
-            bitmap.recycle() // 确保释放内存
+            bitmap.recycle() // Make sure the memory is released
         }
     }
 
     /**
-     * 安全地回收Bitmap内存
+     * Safely recycle a Bitmap's memory
      *
-     * @param bitmap 要回收的bitmap
+     * @param bitmap the bitmap to recycle
      */
     fun recycleBitmapSafely(bitmap: Bitmap?) {
         bitmap?.let {
@@ -263,11 +263,11 @@ object ImageUtils {
     }
 
     /**
-     * 获取图片的基本信息（不加载到内存）
+     * Get basic image info (without loading it into memory)
      *
-     * @param context Android上下文
-     * @param uri 图片URI
-     * @return ImageInfo包含宽度、高度、MIME类型等信息
+     * @param context Android context
+     * @param uri image URI
+     * @return ImageInfo containing the width, height, MIME type, etc.
      */
     fun getImageInfo(context: Context, uri: Uri): ImageInfo? {
         return runCatching {
@@ -292,11 +292,11 @@ object ImageUtils {
     }
 
     /**
-     * 获取酒馆角色卡中的角色元数据（如果存在）
+     * Get the character metadata from a SillyTavern character card (if present)
      *
-     * @param context Android上下文
-     * @param uri 图片URI
-     * @return Result<String> 包含角色元数据的Result对象
+     * @param context Android context
+     * @param uri image URI
+     * @return a Result<String> containing the character metadata
      */
     fun getTavernCharacterMeta(context: Context, uri: Uri): Result<String> = runCatching {
         val metadata = context.contentResolver.openInputStream(uri)?.use { ImageMetadataReader.readMetadata(it) }

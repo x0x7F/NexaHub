@@ -33,7 +33,7 @@ val DEFAULT_PROVIDERS = listOf(
     ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("56a94d29-c88b-41c5-8e09-38a7612d6cf8"),
-        name = "硅基流动",
+        name = "SiliconFlow",
         baseUrl = "https://api.siliconflow.cn/v1",
         apiKey = "",
         builtIn = true,
@@ -60,7 +60,7 @@ val DEFAULT_PROVIDERS = listOf(
     ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("d6c4d8c6-3f62-4ca9-a6f3-7ade6b15ecc3"),
-        name = "月之暗面",
+        name = "Moonshot AI",
         baseUrl = "https://api.moonshot.cn/v1",
         apiKey = "",
         enabled = true,
@@ -98,7 +98,7 @@ val DEFAULT_PROVIDERS = listOf(
     ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("f76cae46-069a-4334-ab8e-224e4979e58c"),
-        name = "阿里云百炼",
+        name = "Alibaba Cloud Bailian",
         baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1",
         apiKey = "",
         enabled = false,
@@ -106,7 +106,7 @@ val DEFAULT_PROVIDERS = listOf(
     ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("3dfd6f9b-f9d9-417f-80c1-ff8d77184191"),
-        name = "火山引擎",
+        name = "Volcengine",
         baseUrl = "https://ark.cn-beijing.volces.com/api/v3",
         apiKey = "",
         enabled = false,
@@ -114,7 +114,7 @@ val DEFAULT_PROVIDERS = listOf(
     ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("3bc40dc1-b11a-46fa-863b-6306971223be"),
-        name = "智谱AI开放平台",
+        name = "Zhipu AI",
         baseUrl = "https://open.bigmodel.cn/api/paas/v4",
         apiKey = "",
         enabled = false,
@@ -122,7 +122,7 @@ val DEFAULT_PROVIDERS = listOf(
     ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("f4f8870e-82d3-495b-9b64-d58e508b3b2c"),
-        name = "阶跃星辰",
+        name = "StepFun",
         baseUrl = "https://api.stepfun.com/v1",
         apiKey = "",
         enabled = false,
@@ -138,7 +138,7 @@ val DEFAULT_PROVIDERS = listOf(
         description = {
             Text(
                 text = buildAnnotatedString {
-                    append("企业级AI服务, 官网：")
+                    append("Enterprise AI services. Website: ")
                     withLink(LinkAnnotation.Url("https://302.ai/")) {
                         withStyle(SpanStyle(MaterialTheme.colorScheme.primary)) {
                             append("https://302.ai/")
@@ -150,7 +150,7 @@ val DEFAULT_PROVIDERS = listOf(
     ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("ef5d149b-8e34-404b-818c-6ec242e5c3c5"),
-        name = "腾讯Hunyuan",
+        name = "Tencent Hunyuan",
         baseUrl = "https://tokenhub.tencentmaas.com/v1",
         apiKey = "",
         enabled = false,

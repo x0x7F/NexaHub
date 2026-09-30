@@ -97,9 +97,9 @@ fun getLatexDrawable(
 }
 
 /**
- * 将一条行内公式按顶层运算符水平拆分为多段 Drawable，
- * 以便在文本流中换行，避免单体公式过长被挤出屏幕。
- * 拆分失败时返回空列表，调用方需自行回退。
+ * Split an inline formula horizontally at top-level operators into several Drawables,
+ * so it can wrap within the text flow instead of an overlong formula being pushed off screen.
+ * Returns an empty list if splitting fails; the caller must fall back on its own.
  */
 fun splitLatex(
     latex: String,

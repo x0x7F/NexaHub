@@ -1,23 +1,23 @@
-# 环境配置
+# Environment Setup
 
-## 准备环境
+## Prerequisites
 
-- 安装CMake
-- 安装NDK，并配置`ANDROID_NDK`环境变量
+- Install CMake
+- Install the NDK and set the `ANDROID_NDK` environment variable
 
 ## git submodule
 
-在项目根目录执行以下命令初始化子模块：
+Run the following command in the project root to initialize submodules:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-注意：必须在git仓库的根目录（`rikkahub/`）执行此命令，不是在 `src/main/cpp/mnn` 目录。
+Note: run this command from the root of the git repository (`rikkahub/`), not from the `src/main/cpp/mnn` directory.
 
-## 构建libMNN.so
+## Building libMNN.so
 
-进入 `src/main/cpp/mnn` 目录，执行以下命令：
+Go to the `src/main/cpp/mnn` directory and run:
 
 ```bash
 ./build.sh

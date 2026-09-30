@@ -17,8 +17,8 @@ import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 使用服务账号（email + private key PEM）换取 Google OAuth2 Access Token。
- * 构造时传入 OkHttpClient；调用时传 email、私钥 PEM 与 scopes。
+ * Exchanges a service account (email + private key PEM) for a Google OAuth2 access token.
+ * Takes an OkHttpClient at construction; each call passes the email, private key PEM and scopes.
  */
 class ServiceAccountTokenProvider(
     private val http: OkHttpClient
@@ -51,10 +51,10 @@ class ServiceAccountTokenProvider(
     }
 
     /**
-     * @param serviceAccountEmail  形如 xxx@project-id.iam.gserviceaccount.com
-     * @param privateKeyPem        服务账号 JSON 中的 private_key 字段（PKCS#8 PEM, 含 -----BEGIN PRIVATE KEY-----）
-     * @param scopes               OAuth scopes，默认 cloud-platform；多个 scope 用 List 传入
-     * @return                     access token 字符串
+     * @param serviceAccountEmail  e.g. xxx@project-id.iam.gserviceaccount.com
+     * @param privateKeyPem        the private_key field from the service account JSON (PKCS#8 PEM, including -----BEGIN PRIVATE KEY-----)
+     * @param scopes               OAuth scopes, cloud-platform by default; pass several scopes as a List
+     * @return                     the access token string
      */
     suspend fun fetchAccessToken(
         serviceAccountEmail: String,
@@ -70,7 +70,7 @@ class ServiceAccountTokenProvider(
             }
         }
         val now = Instant.now().epochSecond
-        val exp = now + 3600 // 最长 1h
+        val exp = now + 3600 // At most 1h
 
         val headerJson = """{"alg":"RS256","typ":"JWT"}"""
         val claimJson = """{

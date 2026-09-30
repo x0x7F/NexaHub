@@ -3,15 +3,15 @@ package me.rerere.rikkahub.ui.components.ui.permission
 import androidx.compose.runtime.Composable
 
 /**
- * 权限管理器组件
- * 自动处理权限请求对话框的显示和隐藏
+ * Permission manager component
+ * Automatically shows and hides the permission request dialog
  *
- * 使用方式：
+ * Usage:
  * ```
  * val permissionState = rememberPermissionState(permissions)
  *
  * PermissionManager(permissionState = permissionState) {
- *     // 你的UI内容
+ *     // Your UI content
  *     YourContent()
  * }
  * ```
@@ -21,7 +21,7 @@ fun PermissionManager(
     permissionState: PermissionState,
     content: @Composable () -> Unit = {},
 ) {
-    // 显示权限请求说明对话框
+    // Show the permission rationale dialog
     if (permissionState.showRationaleDialog && permissionState.currentRationalePermissions.isNotEmpty()) {
         PermissionRationaleDialog(
             permissions = permissionState.currentRationalePermissions,
@@ -39,6 +39,6 @@ fun PermissionManager(
         )
     }
 
-    // 主要内容
+    // Main content
     content()
 }

@@ -19,9 +19,9 @@ def empty():
     pass
 
 
-def 计算(值, 倍数=2):
+def calculé(valeur, facteur=2):
     """Names may be written in any script."""
-    return 值 * 倍数
+    return valeur * facteur
 
 
 class Base:
@@ -29,7 +29,7 @@ class Base:
 
 
 class Derived(Base):
-    标记 = "ok"
+    marqueur = "ok"
 
 
 PLAIN = 'single'

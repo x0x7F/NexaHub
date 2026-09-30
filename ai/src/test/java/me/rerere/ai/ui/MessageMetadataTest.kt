@@ -12,7 +12,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * 验证类型化 metadata 与旧版手写 JsonObject 数据的双向兼容
+ * Verifies two-way compatibility between typed metadata and old hand-written JsonObject data
  */
 class MessageMetadataTest {
 
@@ -21,18 +21,18 @@ class MessageMetadataTest {
         metadata = metadata,
     )
 
-    // ===== 读取旧数据(各 provider 旧代码写入的确切格式) =====
+    // ===== Reading old data (the exact format old code for each provider wrote) =====
 
     @Test
     fun `parses legacy claude metadata`() {
-        // 旧代码: buildJsonObject { put("signature", signature) }
+        // Old code: buildJsonObject { put("signature", signature) }
         val part = reasoningWith(buildJsonObject { put("signature", "sig-abc") })
         assertEquals("sig-abc", part.metadataAs<ClaudeReasoningMetadata>()?.signature)
     }
 
     @Test
     fun `parses legacy openai metadata`() {
-        // 旧代码: buildJsonObject { put("encrypted_content", ...); put("reasoning_id", ...) }
+        // Old code: buildJsonObject { put("encrypted_content", ...); put("reasoning_id", ...) }
         val part = reasoningWith(buildJsonObject {
             put("encrypted_content", "enc-xyz")
             put("reasoning_id", "rs_123")
@@ -44,7 +44,7 @@ class MessageMetadataTest {
 
     @Test
     fun `parses legacy openai metadata with json null encrypted content`() {
-        // 旧代码 put("encrypted_content", null) 会写入 JsonNull
+        // Old code put("encrypted_content", null) writes a JsonNull
         val part = reasoningWith(buildJsonObject {
             put("encrypted_content", null as String?)
             put("reasoning_id", "rs_123")
@@ -56,7 +56,7 @@ class MessageMetadataTest {
 
     @Test
     fun `parses legacy google metadata with json null thought signature`() {
-        // 旧代码无条件写 metadata, thoughtSignature 为空时为 JsonNull
+        // Old code always wrote metadata; thoughtSignature was JsonNull when empty
         val withValue = reasoningWith(buildJsonObject { put("thoughtSignature", "ts-1") })
         assertEquals("ts-1", withValue.metadataAs<GoogleThoughtMetadata>()?.thoughtSignature)
 
@@ -64,7 +64,7 @@ class MessageMetadataTest {
         assertNull(withNull.metadataAs<GoogleThoughtMetadata>()?.thoughtSignature)
     }
 
-    // ===== 容错 =====
+    // ===== Fault tolerance =====
 
     @Test
     fun `returns null when metadata is absent`() {
@@ -73,7 +73,7 @@ class MessageMetadataTest {
 
     @Test
     fun `cross provider metadata does not interfere`() {
-        // 切换 provider 后, OpenAI 写入的 metadata 被 Claude 解析: 不抛异常, signature 为 null
+        // After switching providers, metadata written by OpenAI is parsed by Claude: no exception, signature is null
         val part = reasoningWith(buildJsonObject {
             put("encrypted_content", "enc-xyz")
             put("reasoning_id", "rs_123")
@@ -83,14 +83,14 @@ class MessageMetadataTest {
 
     @Test
     fun `malformed metadata returns null instead of throwing`() {
-        // 类型不匹配 (signature 是 object 而非 string)
+        // Type mismatch (signature is an object, not a string)
         val part = reasoningWith(buildJsonObject {
             put("signature", buildJsonObject { put("nested", "value") })
         })
         assertNull(part.metadataAs<ClaudeReasoningMetadata>())
     }
 
-    // ===== 写入格式与旧 key 保持一致(新写的数据可被旧式取值读取) =====
+    // ===== Write format keeps the old keys (newly written data can be read the old way) =====
 
     @Test
     fun `written metadata uses legacy keys`() {
@@ -107,14 +107,14 @@ class MessageMetadataTest {
 
     @Test
     fun `null fields are omitted when writing`() {
-        // explicitNulls = false: null 字段不写入, 不会出现 "thoughtSignature": null
+        // explicitNulls = false: null fields are not written, so there's no "thoughtSignature": null
         val metadata = GoogleThoughtMetadata(thoughtSignature = null).toMetadata()
         assertFalse(metadata.containsKey("thoughtSignature"))
     }
 
     @Test
     fun `metadata round trip via persistence is stable`() {
-        // 模拟持久化: 部件序列化为 JSON 字符串再读回, metadata 不丢失不变形
+        // Simulate persistence: serialize the part to a JSON string and read it back; metadata is neither lost nor altered
         val json = Json { ignoreUnknownKeys = true }
         val part: UIMessagePart = reasoningWith(
             OpenAIReasoningMetadata(reasoningId = "rs_1", encryptedContent = "enc").toMetadata()
@@ -127,7 +127,7 @@ class MessageMetadataTest {
 
     @Test
     fun `legacy json null thought signature does not survive rewrite`() {
-        // 旧数据含 JsonNull -> 解析 -> 重新写出: JsonNull 被清理而非保留
+        // Old data with JsonNull -> parse -> write again: the JsonNull is dropped rather than kept
         val legacy = reasoningWith(buildJsonObject { put("thoughtSignature", JsonNull) })
         val rewritten = legacy.metadataAs<GoogleThoughtMetadata>()?.toMetadata()
         assertEquals(JsonObject(emptyMap()), rewritten)

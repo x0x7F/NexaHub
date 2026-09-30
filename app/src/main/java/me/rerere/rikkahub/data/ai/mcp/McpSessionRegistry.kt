@@ -46,7 +46,7 @@ private const val MAX_RECONNECT_ATTEMPTS = 5
 private const val BASE_RECONNECT_DELAY_MS = 1000L
 private const val MAX_RECONNECT_DELAY_MS = 30000L
 
-/** 单个 MCP Server 的全部运行时状态。 */
+/** All runtime state of a single MCP server. */
 private class McpSession(initialConfig: McpServerConfig) {
     @Volatile
     var config: McpServerConfig = initialConfig
@@ -88,10 +88,10 @@ internal class McpStatusStore {
 }
 
 /**
- * MCP 连接运行时注册表。
+ * Runtime registry of MCP connections.
  *
- * 每个 serverId 对应一个 [McpSession]，该 Session 的连接、同步、关闭和重连通过同一把 Mutex 串行执行。
- * Client 只有在 connect 与首次工具同步都成功后才对外可见。
+ * Each serverId maps to one [McpSession]; its connect, sync, close and reconnect run serially under the same Mutex.
+ * A client only becomes visible once both connect and the first tool sync succeed.
  */
 internal class McpSessionRegistry(
     private val settingsStore: SettingsStore,
@@ -167,7 +167,7 @@ internal class McpSessionRegistry(
     }
 
     suspend fun addClient(configInput: McpServerConfig) {
-        // SettingsStore 是配置真源。旧任务排队后可能晚于新配置执行，不能再写回旧快照。
+        // SettingsStore is the source of truth for config. A queued old task may run after a newer config and must not write back a stale snapshot.
         val desiredConfig = settingsStore.settingsFlow.value.mcpServers.find { it.id == configInput.id }
         if (desiredConfig == null) {
             removeClient(configInput)
@@ -343,7 +343,7 @@ internal class McpSessionRegistry(
         }
     }
 
-    /** 合并重复的 onError/onClose 通知，并保证每个 Session 最多只有一个重连任务。 */
+    /** Coalesces duplicate onError/onClose notifications and ensures each session has at most one reconnect job. */
     private fun requestReconnect(
         configId: Uuid,
         sourceClient: Client?,
@@ -365,7 +365,7 @@ internal class McpSessionRegistry(
                     session.client = null
                     session.connectedConfig = null
                     failedClient?.let { closeClient(it, session.config.commonOptions.name) }
-                    statusStore.update(configId, McpStatus.Error("连接断开，已达最大重连次数"))
+                    statusStore.update(configId, McpStatus.Error("Disconnected; maximum reconnect attempts reached"))
                     return@withLock
                 }
 
@@ -462,7 +462,7 @@ internal class McpSessionRegistry(
     }
 }
 
-/** 只包含会影响实际连接的字段；工具开关和 Schema 变化不会触发重连。 */
+/** Only the fields that affect the actual connection; tool toggles and schema changes don't trigger a reconnect. */
 internal data class McpConnectionKey(
     val transportType: String,
     val serverUrl: String,
@@ -486,7 +486,7 @@ private fun hasSameConnectionParameters(
 ): Boolean = left != null && right != null && left.connectionKey() == right.connectionKey()
 
 private fun McpServerConfig.resolvedHeaders(): List<Pair<String, String>> {
-    // 设置页“添加请求头”后未填写会留下空名称，OkHttp 会直接抛出 "name is empty"
+    // Tapping "Add header" in settings without filling it in leaves an empty name, and OkHttp throws "name is empty"
     val base = commonOptions.headers.filter { it.first.isNotBlank() }
     val token = commonOptions.oauth?.takeIf { it.enabled }?.accessToken
     val hasAuthorization = base.any { it.first.equals("Authorization", ignoreCase = true) }

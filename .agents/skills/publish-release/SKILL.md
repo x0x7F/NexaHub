@@ -5,36 +5,29 @@ description: Use this skill when users request to publish an release update.
 
 # Publish Release
 
-请基于git log生成更新日志，然后创建一个新的release
+Generate a changelog from the git log, then create a new release.
 
-## 更新日志
+## Changelog
 
-- 查看从上一次release tag到当前commit的修改
-- 总结更新内容并生成更新日志, BUG修复和UI调整尽可能合并，确保总更新日志条目数量不超过 10条
-- 日志中避免出现技术名词
+- Review the changes from the last release tag to the current commit
+- Summarize the changes into a changelog; merge bug fixes and UI tweaks where possible, and keep the total to no more than 10 entries
+- Avoid technical jargon in the changelog
 
-使用以下格式:
+Use this format:
 
 ```markdown
-更新内容:
-
-- xxx
-- xxx
-
 Updates:
 
 - xxx
 - xxx
 ```
 
-(双语更新日志)
+After generating the changelog, ask the user to confirm it looks right, and only create the release once the user confirms it can be published.
 
-更新日志生成完后，请求用户确认更新日志是否合理，等到用户确认可以发布后，创建release
+## Publishing
 
-## 发布
+Use the GitHub CLI to create the release and upload the app/release/xxx.apk file.
 
-使用github cli创建release, 并上传 app/release/xxx.apk 文件
-
-- 仅上传arm64版本, 上传前重命名apk，添加版本号到文件名内
-- release标题使用版本号, 描述使用更新日志
-- tag名字使用版本号，不带v
+- Only upload the arm64 build; before uploading, rename the APK to include the version number in the file name
+- Use the version number as the release title and the changelog as the description
+- Use the version number as the tag name, without a leading v

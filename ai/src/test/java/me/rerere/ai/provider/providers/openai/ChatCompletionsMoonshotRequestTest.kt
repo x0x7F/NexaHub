@@ -60,7 +60,7 @@ class ChatCompletionsMoonshotRequestTest {
         ) as JsonObject
     }
 
-    // #1586: K2.6 思考开启时发送 thinking.keep = "all"（保留式思考）
+    // #1586: with thinking on, K2.6 sends thinking.keep = "all" (preserved thinking)
     @Test
     fun `k2_6 sends thinking keep all when reasoning enabled`() {
         val body = buildRequest("kimi-k2.6", ReasoningLevel.HIGH)
@@ -69,7 +69,7 @@ class ChatCompletionsMoonshotRequestTest {
         assertEquals("all", thinking?.get("keep")?.jsonPrimitive?.content)
     }
 
-    // #1586: K2.6 关闭思考时不发送 keep（文档推荐 keep 与 enabled 搭配）
+    // #1586: with thinking off, K2.6 doesn't send keep (the docs recommend pairing keep with enabled)
     @Test
     fun `k2_6 omits keep when reasoning disabled`() {
         val body = buildRequest("kimi-k2.6", ReasoningLevel.OFF)
@@ -78,7 +78,7 @@ class ChatCompletionsMoonshotRequestTest {
         assertFalse(thinking?.containsKey("keep") == true)
     }
 
-    // #1586: K2.5 不支持 keep 参数，即使思考开启也不发送
+    // #1586: K2.5 doesn't support the keep parameter, so it isn't sent even with thinking on
     @Test
     fun `k2_5 never sends keep`() {
         val body = buildRequest("kimi-k2.5", ReasoningLevel.HIGH)

@@ -332,7 +332,7 @@ private fun ColumnScope.ModelList(
 
     var searchKeywords by remember { mutableStateOf("") }
 
-    // 折叠的供应商（持久化），搜索时全部展开
+    // Collapsed providers (persisted); all are expanded while searching
     var collapsedProvidersPref by rememberSharedPreferenceString("model_list_collapsed_providers", "")
     val collapsedProviders = remember(collapsedProvidersPref) {
         collapsedProvidersPref.orEmpty().split(",").filter { it.isNotBlank() }.toSet()
@@ -366,19 +366,19 @@ private fun ColumnScope.ModelList(
         }
     }
 
-    // 计算当前选中模型的位置
+    // Compute the position of the currently selected model
     val selectedModelPosition = remember(currentModel, favoriteModels, providers, typeFilteredModelsByProvider) {
-        // 仅用于初始定位，搜索关键词此时为空
+        // Only used for initial positioning; the search query is empty at this point
         if (currentModel == null) return@remember 0
 
         var position = 0
 
-        // 跳过无providers提示
+        // Skip the no-providers hint
         if (providers.isEmpty()) {
             position += 1
         }
 
-        // 检查是否在收藏列表中
+        // Check whether it's in the favorites list
         val favoriteIndex = favoriteModels.indexOfFirst { it.first.id == currentModel }
         if (favoriteIndex >= 0) {
             if (favoriteModels.isNotEmpty()) {
@@ -388,20 +388,20 @@ private fun ColumnScope.ModelList(
             return@remember position
         }
 
-        // 跳过收藏列表
+        // Skip the favorites list
         if (favoriteModels.isNotEmpty()) {
             position += 1 // favorite header
             position += favoriteModels.size
         }
 
-        // 在providers中查找
+        // Look it up among the providers
         for (provider in providers) {
             position += 1 // provider header
             val models = typeFilteredModelsByProvider[provider.id].orEmpty()
             val modelIndex = models.indexOfFirst { it.id == currentModel }
             val collapsed = isCollapsed(provider)
             if (modelIndex >= 0) {
-                // 折叠时定位到供应商标题
+                // When collapsed, position at the provider header
                 if (collapsed) return@remember position - 1
                 position += modelIndex
                 return@remember position
@@ -416,7 +416,7 @@ private fun ColumnScope.ModelList(
         initialFirstVisibleItemIndex = selectedModelPosition
     )
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        // 计算favorite models在列表中的位置偏移
+        // Compute the offset of the favorite models in the list
         var favoriteStartIndex = 0
         if (providers.isEmpty()) {
             favoriteStartIndex = 1 // no providers item
@@ -428,7 +428,7 @@ private fun ColumnScope.ModelList(
         val fromIndex = from.index - favoriteStartIndex
         val toIndex = to.index - favoriteStartIndex
 
-        // 只处理favorite models范围内的拖拽
+        // Only handle drags within the favorite models range
         if (fromIndex >= 0 && toIndex >= 0 &&
             fromIndex < favoriteModels.size && toIndex < favoriteModels.size
         ) {
@@ -669,13 +669,13 @@ private fun ColumnScope.ModelList(
         }
     }
 
-    // 供应商Badge行
+    // Provider badge row
     val providerBadgeListState = rememberLazyListState()
     LaunchedEffect(lazyListState) {
-        // 当LazyColumn滚动时，LazyRow也跟随滚动
+        // When the LazyColumn scrolls, the LazyRow scrolls along with it
         snapshotFlow { lazyListState.firstVisibleItemIndex }
             .distinctUntilChanged()
-            .debounce(100) // 防抖处理
+            .debounce(100) // Debounce
             .collect { index ->
                 if (index > 0) {
                     val currentProvider = providerPositions.entries.findLast {

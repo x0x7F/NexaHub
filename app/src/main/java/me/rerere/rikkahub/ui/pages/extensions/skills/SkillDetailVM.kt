@@ -87,19 +87,19 @@ class SkillDetailVM(
     fun saveFile(relativePath: String, content: String, onResult: (String?) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             if (_readOnly.value) {
-                withContext(Dispatchers.Main) { onResult("内置技能不可修改") }
+                withContext(Dispatchers.Main) { onResult("Built-in skills can't be modified") }
                 return@launch
             }
             if (relativePath == "SKILL.md") {
                 val name = SkillFrontmatterParser.parse(content)["name"]
                 if (name != skillName) {
-                    withContext(Dispatchers.Main) { onResult("不允许修改技能名称（name 字段必须为 \"$skillName\"）") }
+                    withContext(Dispatchers.Main) { onResult("The skill name can't be changed (the name field must be \"$skillName\")") }
                     return@launch
                 }
             }
             val success = skillManager.saveSkillFile(skillName, relativePath, content)
             loadFiles()
-            withContext(Dispatchers.Main) { onResult(if (success) null else "保存失败") }
+            withContext(Dispatchers.Main) { onResult(if (success) null else "Save failed") }
         }
     }
 

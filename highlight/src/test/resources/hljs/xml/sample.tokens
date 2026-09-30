@@ -101,7 +101,7 @@ tag	<
 name	body
 tag	>
 	\n  
-comment	<!-- 会话列表 -->
+comment	<!-- conversation list -->
 	\n  
 tag	<
 name	div

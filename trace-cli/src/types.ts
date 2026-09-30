@@ -44,7 +44,7 @@ export interface LoadedTraceCase extends TraceCase {
   timeoutMs: number;
 }
 
-/** 与 ai 模块的 me.rerere.ai.provider.stream.SseEvent 字段保持一致。 */
+/** Keep in sync with the fields of me.ray.nexahub.ai.provider.stream.SseEvent in the ai module. */
 export interface SseEvent {
   id?: string;
   event?: string;

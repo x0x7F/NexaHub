@@ -116,7 +116,7 @@ internal suspend fun generateClaudeWithPauseTurn(
             )
         }
 
-        // pause_turn 要求原样回放当前 assistant 响应，不能额外插入 "Continue" user 消息。
+        // pause_turn requires replaying the current assistant response as-is; no extra "Continue" user message may be inserted.
         requestMessages = requestMessages.handleTextGenerationResult(result, model)
     }
 
@@ -177,8 +177,8 @@ internal fun streamClaudeWithPauseTurn(
 }
 
 /**
- * Claude content block index 只在单次响应内有效。pause_turn 会把多次响应合并为一个逻辑
- * assistant turn，因此在合并前将后续响应的 server tool index 偏移到同一序号空间。
+ * A Claude content block index is only valid within a single response. pause_turn merges several responses into one logical
+ * assistant turn, so before merging, the server tool indexes of later responses are offset into the same index space.
  */
 private fun UIMessage.rebaseClaudeServerToolIndexes(offset: Int): UIMessage = copy(
     parts = parts.map { part ->
@@ -317,7 +317,7 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
         val bodyStr = response.body?.string() ?: ""
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
-        // 从 JsonObject 中提取必要的信息
+        // Extract the required information from the JsonObject
         val id = bodyJson["id"]?.jsonPrimitive?.contentOrNull ?: ""
         val model = bodyJson["model"]?.jsonPrimitive?.contentOrNull ?: ""
         val content = bodyJson["content"]?.jsonArray ?: JsonArray(emptyList())
@@ -425,7 +425,7 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
             Log.d(TAG, "Closing eventSource")
             eventSource.cancel()
         }
-        // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
+        // trySend silently drops deltas when the buffer is full, which drops characters mid-reply (#1295), so the buffer must be unbounded
     }.buffer(Channel.UNLIMITED).flowOn(Dispatchers.IO)
 
     private fun buildMessageRequest(
@@ -442,7 +442,7 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
             )
             put("max_tokens", params.maxTokens ?: 64_000)
 
-            // 顶层 cache_control: 让 Anthropic 自动管理缓存断点
+            // Top-level cache_control: let Anthropic manage cache breakpoints automatically
             if (providerSetting.promptCaching) {
                 put("cache_control", cacheControlEphemeral(providerSetting.promptCacheTtl))
             }
@@ -472,9 +472,9 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
                 })
             }
 
-            // 处理 thinking
-            // Anthropic 新 API: adaptive 模式 + output_config.effort 控制强度
-            // 旧的 type=enabled + budget_tokens 在 Opus 4.7+ 上已不支持
+            // Handle thinking
+            // New Anthropic API: adaptive mode + output_config.effort controls the effort
+            // The old type=enabled + budget_tokens is no longer supported on Opus 4.7+
             if (params.model.abilities.contains(ModelAbility.REASONING)) {
                 when (params.reasoningLevel) {
                     ReasoningLevel.OFF -> {
@@ -500,7 +500,7 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
                 }
             }
 
-            // 处理工具
+            // Handle tools
             val useFunctionTools =
                 params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty()
             val toolDefinitions = buildList {
@@ -568,13 +568,13 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
     }
 
     /**
-     * 在倒数第二条非 tool_result 的 user message 的最后一个 content block 上插入 cache_control
+     * Insert cache_control on the last content block of the second-to-last user message that is not a tool_result
      */
     private fun insertMessagesCacheControl(
         messages: JsonArray,
         promptCacheTtl: ClaudePromptCacheTtl
     ): JsonArray {
-        // 找出所有非 tool_result 的 user message 的索引
+        // Find the indexes of all user messages that are not tool_results
         val realUserIndices = messages.mapIndexedNotNull { index, msg ->
             val obj = msg.jsonObject
             if (obj["role"]?.jsonPrimitive?.contentOrNull == "user") {
@@ -586,12 +586,12 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
             } else null
         }
 
-        // 取倒数第二条
+        // Take the second-to-last one
         val targetIndex = if (realUserIndices.size >= 2) {
             realUserIndices[realUserIndices.size - 2]
         } else return messages
 
-        // 在目标 message 的最后一个 content block 上添加 cache_control
+        // Add cache_control to the last content block of the target message
         return JsonArray(messages.mapIndexed { index, msg ->
             if (index == targetIndex) {
                 val obj = msg.jsonObject
@@ -619,17 +619,17 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
                 }
 
                 is PartGroup.Tools -> {
-                    // 添加 tool_use 到内容缓冲
+                    // Add tool_use to the content buffer
                     group.tools.forEach { contentBuffer.add(it.toToolUseBlock()) }
 
-                    // 输出 assistant 消息
+                    // Emit the assistant message
                     add(buildJsonObject {
                         put("role", "assistant")
                         putJsonArray("content") { contentBuffer.forEach { add(it) } }
                     })
                     contentBuffer.clear()
 
-                    // 紧跟 tool_result
+                    // Followed immediately by tool_result
                     add(buildJsonObject {
                         put("role", "user")
                         putJsonArray("content") {
@@ -640,7 +640,7 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
             }
         }
 
-        // 输出剩余内容
+        // Emit the remaining content
         if (contentBuffer.isNotEmpty()) {
             add(buildJsonObject {
                 put("role", "assistant")
@@ -664,8 +664,8 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
     }
 
     /**
-     * 解析后 server tool 的 call/result 会合并到同一个 part。回放连续 server tool 时
-     * 按原始 content block index 还原顺序；旧消息没有 index 时回退为先 calls、后 results。
+     * After parsing, a server tool's call/result are merged into the same part. When replaying consecutive server tools,
+     * restore the order by the original content block index; old messages without an index fall back to calls first, then results.
      */
     private fun List<UIMessagePart>.toContentBlocks(): List<JsonObject> = buildList {
         val serverTools = mutableListOf<UIMessagePart.ServerTool>()
@@ -896,7 +896,7 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
     private fun parseTokenUsage(bodyJson: JsonObject?): TokenUsage? {
         if (bodyJson == null) return null
 
-        // 回退到标准 usage 字段
+        // Fall back to the standard usage fields
         val usageJson = bodyJson["usage"]?.jsonObject
             ?: bodyJson["message"]?.jsonObject?.get("usage")?.jsonObject
             ?: return null

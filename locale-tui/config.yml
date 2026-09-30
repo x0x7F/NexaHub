@@ -1,9 +1,9 @@
-# locale-tui 配置文件
+# locale-tui configuration file
 
-# 项目根路径 (相对于 locale-tui 目录)
+# Project root path (relative to the locale-tui directory)
 project_root: ".."
 
-# 模块配置
+# Module configuration
 modules:
   - name: "app"
     res_path: "app/src/main/res"
@@ -41,25 +41,11 @@ modules:
       - "rag/src/main/java/**/*.java"
       - "rag/src/main/AndroidManifest.xml"
 
-# 支持的语言列表
+# Supported languages
 languages:
   - code: "values"
     name: "English"
     is_source: true
-  - code: "values-zh"
-    name: "Chinese (Simplified)"
-    glossary:
-      prompt: "提示词（不要译为“提示”）"
-      context: "上下文"
-      model: "模型"
-      inference: "推理"
-  - code: "values-zh-rTW"
-    name: "Chinese (Traditional)"
-    glossary:
-      prompt: "提示詞（不要譯為「提示」）"
-      context: "上下文"
-      model: "模型"
-      inference: "推理"
   - code: "values-ja"
     name: "Japanese"
   - code: "values-ko-rKR"
@@ -68,7 +54,7 @@ languages:
     name: "Russian"
   - code: "values-ar"
     name: "Arabic"
-    # 使用不带冠词的基本形式，由模型按语法变格
+    # Use the basic form without the article; the model inflects it grammatically
     glossary:
       prompt: "مطالبة (plural مطالبات); never موجه"
       system prompt: "مطالبة النظام"
@@ -89,7 +75,7 @@ languages:
       memory: "ذاكرة"
       quick message: "رسالة سريعة"
 
-# AI 翻译配置
+# AI translation configuration
 translation:
   batch_size: 10
   model: "deepseek-v4-flash"
@@ -114,7 +100,7 @@ translation:
     Respond with a JSON object mapping the same keys to translated values.
     Only output the JSON, no other text.
 
-# 显示设置
+# Display settings
 display:
   column_widths:
     key: 30

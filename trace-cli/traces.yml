@@ -1,12 +1,12 @@
 version: 1
 
 defaults:
-  # 相对于本 YAML 文件解析。
+  # Resolved relative to this YAML file.
   outputRoot: ../ai/src/test/resources/stream-traces/generated
   timeoutMs: 120000
 
 traces:
-  # DeepSeek：OpenAI Chat Completions 协议。
+  # DeepSeek: OpenAI Chat Completions protocol.
   - name: deepseek-chat-tool
     provider: openai-chat
     baseUrl: https://api.deepseek.com
@@ -30,8 +30,8 @@ traces:
                   description: A focused search query for one topic.
               required: [query]
               additionalProperties: false
-  # DeepSeek：OpenAI Responses 兼容协议。
-  # 如果实际网关路径不同，只需修改 baseUrl 或 endpoint。
+  # DeepSeek: OpenAI Responses-compatible protocol.
+  # If the actual gateway path differs, just change baseUrl or endpoint.
   - name: deepseek-responses-tool
     provider: openai-responses
     baseUrl: https://api.deepseek.com
@@ -60,7 +60,7 @@ traces:
                 description: A focused search query for one topic.
             required: [query]
             additionalProperties: false
-  # DeepSeek：OpenAI Responses 兼容协议，由服务端执行网页搜索。
+  # DeepSeek: OpenAI Responses-compatible protocol, with server-side web search.
   - name: deepseek-responses-server-tool
     provider: openai-responses
     baseUrl: https://api.deepseek.com
@@ -80,7 +80,7 @@ traces:
         - web_search_call.action.sources
       tools:
         - type: web_search
-  # DeepSeek：Anthropic Messages 兼容协议，同时调用客户端与服务端工具。
+  # DeepSeek: Anthropic Messages-compatible protocol, calling both client and server tools.
   - name: deepseek-anthropic-tool
     provider: claude
     baseUrl: https://api.deepseek.com/anthropic
@@ -115,7 +115,7 @@ traces:
         - type: web_search_20250305
           name: web_search
           max_uses: 3
-  # OpenRouter：OpenAI Chat Completions 兼容协议。
+  # OpenRouter: OpenAI Chat Completions-compatible protocol.
   - name: openrouter-completions-tool
     provider: openai-chat
     baseUrl: https://openrouter.ai/api/v1
@@ -141,7 +141,7 @@ traces:
                   description: A focused search query for one topic.
               required: [query]
               additionalProperties: false
-  # OpenRouter：OpenAI Responses 兼容协议。
+  # OpenRouter: OpenAI Responses-compatible protocol.
   - name: openrouter-gpt-responses-tool
     provider: openai-responses
     baseUrl: https://openrouter.ai/api/v1
@@ -171,7 +171,7 @@ traces:
                 description: A focused search query for one topic.
             required: [query]
             additionalProperties: false
-  # OpenRouter：Anthropic Messages 兼容协议。
+  # OpenRouter: Anthropic Messages-compatible protocol.
   - name: openrouter-claude-tool
     provider: claude
     baseUrl: https://openrouter.ai/api/v1
@@ -203,7 +203,7 @@ traces:
                 description: A focused search query for one topic.
             required: [query]
             additionalProperties: false
-  # OpenAI 官方：Responses API。
+  # Official OpenAI: Responses API.
   - name: openai-responses-tool
     provider: openai-responses
     baseUrl: https://api.openai.com/v1
@@ -233,7 +233,7 @@ traces:
                 description: A focused search query for one topic.
             required: [query]
             additionalProperties: false
-  # Gemini 官方：Generate Content SSE 协议。
+  # Official Gemini: Generate Content SSE protocol.
   - name: gemini-tool
     provider: google-generateContent
     apiKeyEnv: GEMINI_API_KEY
@@ -258,7 +258,7 @@ traces:
                     type: string
                     description: A focused search query for one topic.
                 required: [query]
-  # Gemini 官方：原生图像生成 SSE 协议。
+  # Official Gemini: native image generation SSE protocol.
   - name: gemini-image
     provider: google-generateContent
     baseUrl: https://generativelanguage.googleapis.com/v1
@@ -274,7 +274,7 @@ traces:
         - role: user
           parts:
             - text: "Create a picture of a nano banana dish in a fancy restaurant with a Gemini theme"
-  # Gemini 官方：Interactions SSE 协议。
+  # Official Gemini: Interactions SSE protocol.
   - name: gemini-interactions-tool
     provider: google-interactions
     apiKeyEnv: GEMINI_API_KEY

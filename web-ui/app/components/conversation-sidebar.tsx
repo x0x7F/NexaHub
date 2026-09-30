@@ -132,10 +132,7 @@ const COLOR_THEME_OPTIONS: Array<{
   },
 ];
 
-const LANGUAGE_OPTIONS = [
-  { value: "zh-CN", label: "简体中文" },
-  { value: "en-US", label: "English" },
-] as const;
+const LANGUAGE_OPTIONS = [{ value: "en-US", label: "English" }] as const;
 
 type ConversationListItem =
   | { type: "pinned-header" }
@@ -556,13 +553,9 @@ const ConversationListRow = React.memo(
   },
 );
 
-function resolveLanguage(language: string): (typeof LANGUAGE_OPTIONS)[number]["value"] {
-  return language.startsWith("zh") ? "zh-CN" : "en-US";
-}
-
 function LanguageSwitcher() {
   const { i18n } = useTranslation();
-  const currentLanguage = resolveLanguage(i18n.resolvedLanguage ?? i18n.language);
+  const currentLanguage = i18n.resolvedLanguage ?? i18n.language;
   const currentOption =
     LANGUAGE_OPTIONS.find((option) => option.value === currentLanguage) ?? LANGUAGE_OPTIONS[0];
 

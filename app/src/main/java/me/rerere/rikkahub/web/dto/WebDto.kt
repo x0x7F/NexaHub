@@ -74,7 +74,7 @@ data class RenameFolderRequest(
 
 @Serializable
 data class MoveConversationToFolderRequest(
-    // null 表示移出文件夹（未归类）
+    // null means moving it out of the folder (uncategorized)
     val folderId: String? = null
 )
 

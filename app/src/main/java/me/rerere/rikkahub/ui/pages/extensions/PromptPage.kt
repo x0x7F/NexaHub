@@ -868,7 +868,7 @@ private fun LorebookEditSheet(
                     }
                 )
 
-                // 条目列表
+                // Entry list
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1049,7 +1049,7 @@ private fun RegexInjectionEditDialog(
                     )
                 }
 
-                // 关键词
+                // Keywords
                 Text(stringResource(R.string.prompt_page_keywords_label), style = MaterialTheme.typography.titleSmall)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),

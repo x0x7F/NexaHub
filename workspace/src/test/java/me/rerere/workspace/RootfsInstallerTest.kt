@@ -16,7 +16,7 @@ class RootfsInstallerTest {
 
     @Test
     fun `extract skips OTHER entry data exactly once`() {
-        // OTHER 条目 (如 GNU sparse) 带 size>0 数据区, 双重 skip 会让后续 header 错位
+        // OTHER entries (such as GNU sparse) have a size>0 data area; skipping twice would misalign the following headers
         val archive = tmp.newFile("rootfs.tar.gz")
         GZIPOutputStream(archive.outputStream()).use { out ->
             out.writeTarEntry("a.txt", '0', "hello".toByteArray())

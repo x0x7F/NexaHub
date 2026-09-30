@@ -59,7 +59,7 @@ fun LanguageSelectionDialog(
     onClearTranslation: () -> Unit = {},
     onDismissRequest: () -> Unit
 ) {
-    // 支持的语言列表
+    // Supported languages
     val languages = remember {
         listOf(
             Locale.SIMPLIFIED_CHINESE,
@@ -74,7 +74,7 @@ fun LanguageSelectionDialog(
         )
     }
 
-    // 语言名称映射函数，原有的 locale.displayName 方法无法获取 emoji
+    // Language name mapping; the built-in locale.displayName can't provide emoji
     @Composable
     fun getLanguageDisplayName(locale: Locale): String {
         return when (locale) {
@@ -101,14 +101,14 @@ fun LanguageSelectionDialog(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // 标题
+            // Title
             Text(
                 text = stringResource(R.string.translation_language_selection_title),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // 语言列表
+            // Language list
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -209,7 +209,7 @@ fun CollapsibleTranslationText(
                 )
             }
 
-            // 折叠/展开按钮
+            // Collapse/expand button
             IconButton(
                 onClick = { isCollapsed = !isCollapsed },
                 modifier = Modifier.size(32.dp)

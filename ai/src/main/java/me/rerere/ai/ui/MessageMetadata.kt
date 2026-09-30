@@ -10,19 +10,19 @@ import kotlinx.serialization.json.jsonObject
 import me.rerere.ai.util.json
 
 /**
- * [UIMessagePart.metadata] 的类型安全 schema
+ * Type-safe schema for [UIMessagePart.metadata]
  *
- * metadata 在序列化层仍然是 [JsonObject], 这里只是为读写提供编译期类型:
- * - 读: `part.metadataAs<ClaudeReasoningMetadata>()?.signature`
- * - 写: `part.metadata = ClaudeReasoningMetadata(signature = ...).toMetadata()`
+ * At the serialization layer metadata is still a [JsonObject]; this only provides compile-time types for reads and writes:
+ * - Read: `part.metadataAs<ClaudeReasoningMetadata>()?.signature`
+ * - Write: `part.metadata = ClaudeReasoningMetadata(signature = ...).toMetadata()`
  *
- * 所有字段必须可空且 key 与历史数据保持一致(必要时用 [SerialName]),
- * 否则旧会话中持久化的 metadata 将无法解析
+ * All fields must be nullable and keep the same keys as historical data (use [SerialName] where needed),
+ * otherwise metadata persisted in old conversations can't be parsed
  */
 sealed interface PartMetadata
 
 /**
- * Claude thinking block 的元数据, 回传时需要携带 signature
+ * Metadata of a Claude thinking block; the signature must be sent back
  */
 @Serializable
 data class ClaudeReasoningMetadata(
@@ -30,7 +30,7 @@ data class ClaudeReasoningMetadata(
 ) : PartMetadata
 
 /**
- * OpenAI Responses API reasoning item 的元数据, 回传时需要携带 id 和 encrypted_content
+ * Metadata of an OpenAI Responses API reasoning item; the id and encrypted_content must be sent back
  */
 @Serializable
 data class OpenAIReasoningMetadata(
@@ -41,7 +41,7 @@ data class OpenAIReasoningMetadata(
 ) : PartMetadata
 
 /**
- * 服务端工具原始块所属的 wire protocol，与实际提供商品牌无关。
+ * The wire protocol a raw server tool block belongs to, independent of the actual provider brand.
  */
 @Serializable
 enum class ServerToolProtocol {
@@ -56,10 +56,10 @@ enum class ServerToolProtocol {
 }
 
 /**
- * Provider 服务端工具的原始协议块。
+ * Raw protocol blocks of a provider's server tool.
  *
- * 通用字段保存在 [UIMessagePart.ServerTool] 自身；这里额外保留 Provider 原始调用/结果，供多轮请求
- * 原样回传。OpenAI Responses API 通常只使用 [call]，Claude 则分别使用 [call] 和 [result]。
+ * Common fields live on [UIMessagePart.ServerTool] itself; this additionally keeps the provider's raw call/result so that
+ * multi-turn requests can send them back as-is. The OpenAI Responses API usually only uses [call]; Claude uses both [call] and [result].
  */
 @Serializable
 data class ServerToolMetadata(
@@ -76,7 +76,7 @@ data class ServerToolMetadata(
 ) : PartMetadata
 
 /**
- * OpenRouter Chat Completions 的结构化 reasoning_details，工具调用续轮时需要原样回传。
+ * Structured reasoning_details from OpenRouter Chat Completions; must be sent back as-is when continuing after tool calls.
  */
 @Serializable
 data class OpenRouterReasoningMetadata(
@@ -85,7 +85,7 @@ data class OpenRouterReasoningMetadata(
 ) : PartMetadata
 
 /**
- * Google Gemini 部件的 thoughtSignature，回传时需要携带
+ * thoughtSignature of a Google Gemini part; must be sent back
  */
 @Serializable
 data class GoogleThoughtMetadata(
@@ -93,8 +93,8 @@ data class GoogleThoughtMetadata(
 ) : PartMetadata
 
 /**
- * 文件编辑类工具(如 workspace_edit_file)输出部件的元数据,
- * 携带 unified diff 文本供 UI 渲染 diff view, 不会发送给 API
+ * Metadata of output parts from file-editing tools (e.g. workspace_edit_file),
+ * carrying the unified diff text for the UI's diff view; never sent to the API
  */
 @Serializable
 data class DiffMetadata(
@@ -102,19 +102,19 @@ data class DiffMetadata(
 ) : PartMetadata
 
 /**
- * 将 metadata 解析为类型化的 [PartMetadata], 解析失败或 metadata 为 null 时返回 null
+ * Parse metadata into a typed [PartMetadata]; returns null if parsing fails or metadata is null
  *
- * 由于 json 配置了 ignoreUnknownKeys, 不同 provider 的 metadata 互不干扰
- * (例如切换 provider 后, OpenAI 写入的 reasoning 元数据不会影响 Claude 的解析)
+ * Because the json config has ignoreUnknownKeys, metadata from different providers doesn't interfere
+ * (e.g. after switching providers, reasoning metadata written by OpenAI doesn't affect Claude's parsing)
  */
 inline fun <reified T : PartMetadata> UIMessagePart.metadataAs(): T? = metadata?.let {
     runCatching { json.decodeFromJsonElement<T>(it) }.getOrNull()
 }
 
 /**
- * 将类型化的 [PartMetadata] 编码为 metadata [JsonObject]
+ * Encode a typed [PartMetadata] into a metadata [JsonObject]
  *
- * 由于 json 配置了 explicitNulls = false, 值为 null 的字段不会写入
+ * Because the json config has explicitNulls = false, null fields are not written
  */
 inline fun <reified T : PartMetadata> T.toMetadata(): JsonObject =
     json.encodeToJsonElement(this).jsonObject

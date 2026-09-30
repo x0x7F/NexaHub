@@ -1,6 +1,6 @@
 comment	/* 
 doctag	TODO:
-comment	 校对一遍这些边界情况 */
+comment	 review these edge cases */
 	\n
 keyword	@font-face
 	 {\n  

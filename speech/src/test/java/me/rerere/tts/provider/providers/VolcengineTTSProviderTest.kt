@@ -22,7 +22,7 @@ class VolcengineTTSProviderTest {
             apiKey = " key ",
             baseUrl = "https://example.com/", speechRate = 200,
         )
-        val text = "你好，\"世界\"！\n第二行"
+        val text = "héllo, \"wörld\"!\nsecond line"
         val request = buildVolcengineTTSRequest(setting, text)
         assertEquals("https://example.com/api/v3/tts/unidirectional/sse", request.url.toString())
         assertEquals("key", request.header("X-Api-Key"))

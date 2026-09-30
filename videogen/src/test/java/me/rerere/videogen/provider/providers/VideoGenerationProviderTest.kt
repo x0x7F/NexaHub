@@ -25,7 +25,7 @@ class VideoGenerationProviderTest {
         val body = AliyunVideoGenerationProvider(client).buildCreateBody(
             setting = VideoGenerationProviderSetting.Aliyun(model = "wan3.0-video"),
             request = VideoGenerationRequest(
-                prompt = "产品广告",
+                prompt = "Product ad",
                 inputs = listOf(
                     VideoGenerationInput.Image(
                         "https://example.com/start.png",
@@ -56,7 +56,7 @@ class VideoGenerationProviderTest {
         val body = VolcengineVideoGenerationProvider(client).buildCreateBody(
             setting = VideoGenerationProviderSetting.Volcengine(model = "seedance-test"),
             request = VideoGenerationRequest(
-                prompt = "参考图和音频生成视频",
+                prompt = "Generate a video from a reference image and audio",
                 inputs = listOf(
                     VideoGenerationInput.Image("https://example.com/ref.png"),
                     VideoGenerationInput.Audio("https://example.com/ref.mp3"),

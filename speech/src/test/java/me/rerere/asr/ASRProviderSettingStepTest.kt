@@ -37,7 +37,7 @@ class ASRProviderSettingStepTest {
             segmentDurationSec = 60,
             enableItn = false,
             enableTimestamp = true,
-            hotwords = listOf("热词1", "热词2"),
+            hotwords = listOf("hotword1", "hotword2"),
         )
         val copied = original.copyProvider(id = original.id, name = "renamed")
 
@@ -52,6 +52,6 @@ class ASRProviderSettingStepTest {
         assertEquals(60, step.segmentDurationSec)
         assertEquals(false, step.enableItn)
         assertEquals(true, step.enableTimestamp)
-        assertEquals(listOf("热词1", "热词2"), step.hotwords)
+        assertEquals(listOf("hotword1", "hotword2"), step.hotwords)
     }
 }

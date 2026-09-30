@@ -12,9 +12,9 @@ import me.rerere.rikkahub.data.model.isTriggered
 import kotlin.uuid.Uuid
 
 /**
- * 提示词注入转换器
+ * Prompt injection transformer
  *
- * 根据 Assistant 关联的 ModeInjection 和 Lorebook 进行提示词注入
+ * Injects prompts based on the ModeInjections and Lorebooks linked to the Assistant
  */
 object PromptInjectionTransformer : InputMessageTransformer {
     override suspend fun transform(
@@ -33,7 +33,7 @@ object PromptInjectionTransformer : InputMessageTransformer {
 }
 
 /**
- * 核心注入逻辑（可测试的纯函数）
+ * Core injection logic (a testable pure function)
  */
 internal fun transformMessages(
     messages: List<UIMessage>,
@@ -43,7 +43,7 @@ internal fun transformMessages(
     conversationModeInjectionIds: Set<Uuid> = emptySet(),
     conversationLorebookIds: Set<Uuid> = emptySet(),
 ): List<UIMessage> {
-    // 收集所有需要注入的内容
+    // Collect everything that needs to be injected
     val injections = collectInjections(
         messages = messages,
         assistant = assistant,
@@ -57,17 +57,17 @@ internal fun transformMessages(
         return messages
     }
 
-    // 按位置和优先级分组
+    // Group by position and priority
     val byPosition = injections
         .sortedByDescending { it.priority }
         .groupBy { it.position }
 
-    // 应用注入
+    // Apply the injections
     return applyInjections(messages, byPosition)
 }
 
 /**
- * 收集需要注入的内容
+ * Collect the content to inject
  */
 internal fun collectInjections(
     messages: List<UIMessage>,
@@ -89,17 +89,17 @@ internal fun collectInjections(
         assistant.lorebookIds
     }
 
-    // 1. 获取关联的 ModeInjection
+    // 1. Get the linked ModeInjections
     modeInjections
         .filter { it.enabled && effectiveModeInjectionIds.contains(it.id) }
         .forEach { injections.add(it) }
 
-    // 2. 获取关联的 Lorebook 中被触发的 RegexInjection
+    // 2. Get the triggered RegexInjections from the linked Lorebooks
     val enabledLorebooks = lorebooks.filter {
         it.enabled && effectiveLorebookIds.contains(it.id)
     }
     if (enabledLorebooks.isNotEmpty()) {
-        // 提取上下文用于匹配（只取非 SYSTEM 消息）
+        // Extract the context used for matching (non-SYSTEM messages only)
         val nonSystemMessages = messages.filter { it.role != MessageRole.SYSTEM }
 
         enabledLorebooks.forEach { lorebook ->
@@ -116,7 +116,7 @@ internal fun collectInjections(
 }
 
 /**
- * 应用注入到消息列表
+ * Apply the injections to the message list
  */
 internal fun applyInjections(
     messages: List<UIMessage>,
@@ -124,10 +124,10 @@ internal fun applyInjections(
 ): List<UIMessage> {
     val result = messages.toMutableList()
 
-    // 找到系统消息的索引（通常是第一条）
+    // Find the index of the system message (usually the first one)
     val systemIndex = result.indexOfFirst { it.role == MessageRole.SYSTEM }
 
-    // 处理 BEFORE_SYSTEM_PROMPT 和 AFTER_SYSTEM_PROMPT
+    // Handle BEFORE_SYSTEM_PROMPT and AFTER_SYSTEM_PROMPT
     if (systemIndex >= 0) {
         val beforeContent = byPosition[InjectionPosition.BEFORE_SYSTEM_PROMPT]
             ?.joinToString("\n") { it.content } ?: ""
@@ -158,7 +158,7 @@ internal fun applyInjections(
             )
         }
     } else {
-        // 没有系统消息时，创建一个新的系统消息
+        // If there's no system message, create a new one
         val beforeContent = byPosition[InjectionPosition.BEFORE_SYSTEM_PROMPT]
             ?.joinToString("\n") { it.content } ?: ""
         val afterContent = byPosition[InjectionPosition.AFTER_SYSTEM_PROMPT]
@@ -179,10 +179,10 @@ internal fun applyInjections(
         }
     }
 
-    // 处理 TOP_OF_CHAT：在第一条用户消息之前插入
+    // Handle TOP_OF_CHAT: insert before the first user message
     val topInjections = byPosition[InjectionPosition.TOP_OF_CHAT]
     if (!topInjections.isNullOrEmpty()) {
-        // 重新计算索引（因为可能插入了系统消息）
+        // Recompute the index (a system message may have been inserted)
         var insertIndex = result.indexOfFirst { it.role == MessageRole.USER }
             .takeIf { it >= 0 } ?: result.size
         insertIndex = findSafeInsertIndex(result, insertIndex)
@@ -192,7 +192,7 @@ internal fun applyInjections(
         }
     }
 
-    // 处理 BOTTOM_OF_CHAT：在最后一条消息之前插入
+    // Handle BOTTOM_OF_CHAT: insert before the last message
     val bottomInjections = byPosition[InjectionPosition.BOTTOM_OF_CHAT]
     if (!bottomInjections.isNullOrEmpty()) {
         var insertIndex = (result.size - 1).coerceAtLeast(0)
@@ -203,15 +203,15 @@ internal fun applyInjections(
         }
     }
 
-    // 处理 AT_DEPTH：在指定深度位置插入（从最新消息往前数）
-    // 按 injectDepth 分组，相同深度的合并，按深度从大到小处理（避免索引变化问题）
+    // Handle AT_DEPTH: insert at the given depth (counting back from the newest message)
+    // Group by injectDepth, merge those at the same depth, and process from deepest to shallowest (avoids index shifts)
     val atDepthInjections = byPosition[InjectionPosition.AT_DEPTH]
     if (!atDepthInjections.isNullOrEmpty()) {
         val byDepth = atDepthInjections.groupBy { it.injectDepth }
         byDepth.keys.sortedDescending().forEach { depth ->
             val injections = byDepth[depth] ?: return@forEach
-            // 计算插入位置：result.size - depth，但要确保在有效范围内
-            // depth=1 表示在最后一条消息之前，depth=2 表示在倒数第二条之前...
+            // Compute the insert position: result.size - depth, clamped to the valid range
+            // depth=1 means before the last message, depth=2 before the second-to-last...
             var insertIndex = (result.size - depth.coerceAtLeast(1)).coerceIn(0, result.size)
             insertIndex = findSafeInsertIndex(result, insertIndex)
             createMergedInjectionMessages(injections).forEach { message ->
@@ -225,8 +225,8 @@ internal fun applyInjections(
 }
 
 /**
- * 将同一 role 的注入合并成消息列表
- * 按 role 分组后合并内容，返回合并后的消息列表
+ * Merge injections with the same role into a message list
+ * Groups by role, merges the content, and returns the merged message list
  */
 private fun createMergedInjectionMessages(injections: List<PromptInjection>): List<UIMessage> {
     return injections
@@ -243,20 +243,20 @@ private fun createMergedInjectionMessages(injections: List<PromptInjection>): Li
 }
 
 /**
- * 查找安全的插入位置，避免注入到 USER → ASSISTANT(含Tool) 之间
+ * Find a safe insert position, avoiding injecting between USER → ASSISTANT (with tools)
  *
- * 某些提供商（如 deepseek）要求 USER 之后紧跟带工具的 ASSISTANT，
- * 在两者之间插入消息会导致报错或破坏推理连续性。
+ * Some providers (e.g. deepseek) require an ASSISTANT with tools to immediately follow the USER,
+ * and inserting a message between them causes errors or breaks reasoning continuity.
  */
 internal fun findSafeInsertIndex(messages: List<UIMessage>, targetIndex: Int): Int {
     var index = targetIndex.coerceIn(0, messages.size)
 
-    // 向前查找，直到找到一个安全的位置
+    // Search backwards until a safe position is found
     while (index > 0) {
         val prevMessage = messages.getOrNull(index - 1)
         val currentMessage = messages.getOrNull(index)
 
-        // 不能插入到 USER → ASSISTANT(含Tool) 之间
+        // Must not insert between USER → ASSISTANT (with tools)
         val isPrevUser = prevMessage?.role == MessageRole.USER
         val isCurrentAssistantWithTools = currentMessage?.role == MessageRole.ASSISTANT
             && currentMessage.getTools().isNotEmpty()

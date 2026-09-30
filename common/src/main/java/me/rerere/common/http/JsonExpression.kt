@@ -30,27 +30,27 @@ fun parseExpression(input: String): ParseResult {
 fun isJsonExprValid(input: String): Boolean = parseExpression(input).success
 
 /**
- * 针对给定的根JSON对象评估JSON表达式，并将结果作为字符串返回。
+ * Evaluates a JSON expression against the given root JSON object and returns the result as a string.
  *
- * 支持的语言特性：
- * - 路径导航：`field`、`field.sub`、`array[0]`
- * - 带转义的字符串字面量：`"text"`，支持`\n`、`\r`、`\t`、`\\`、`\"`
- * - 数字：整数和小数（例如，`1`、`3.14`）
- * - 一元运算符：`+expr`、`-expr`
- * - 算术运算符：`+`、`-`、`*`、`/`（`x`作为`*`的别名）
- * - 字符串连接：`++`（操作数被强制转换为字符串）
+ * Supported language features:
+ * - Path navigation: `field`, `field.sub`, `array[0]`
+ * - String literals with escapes: `"text"`, supporting `\n`, `\r`, `\t`, `\\`, `\"`
+ * - Numbers: integers and decimals (e.g. `1`, `3.14`)
+ * - Unary operators: `+expr`, `-expr`
+ * - Arithmetic operators: `+`, `-`, `*`, `/` (`x` as an alias for `*`)
+ * - String concatenation: `++` (operands are coerced to strings)
  *
- * 解析和强制转换规则：
- * - 缺失的字段/索引解析为空字符串。
- * - JSON基本类型：字符串保持不变；数字进行最小化格式化（例如，`3.0` -> `"3"`）。
- * - JSON对象/数组以其JSON字符串表示形式返回。
+ * Resolution and coercion rules:
+ * - Missing fields/indexes resolve to an empty string.
+ * - JSON primitives: strings stay as-is; numbers are formatted minimally (e.g. `3.0` -> `"3"`).
+ * - JSON objects/arrays are returned as their JSON string representation.
  *
- * 错误：
- * - 对于无效语法或不支持的运算符，抛出[ParseException]。
+ * Errors:
+ * - Throws [ParseException] for invalid syntax or unsupported operators.
  *
- * @param input 要评估的表达式。
- * @param root 用于解析路径的根[JsonObject]。
- * @return 作为字符串的评估值。
+ * @param input the expression to evaluate.
+ * @param root the root [JsonObject] used to resolve paths.
+ * @return the evaluated value as a string.
  */
 fun evaluateJsonExpr(input: String, root: JsonObject): String {
     val lexer = Lexer(input)

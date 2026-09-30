@@ -61,7 +61,7 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
                 .timeout(5000)
                 .get()
 
-            // 解析搜索结果
+            // Parse the search results
             val results = doc.select("li.b_algo").map { element ->
                 val title = element.select("h2").text()
                 val link = element.select("h2 > a").attr("href")

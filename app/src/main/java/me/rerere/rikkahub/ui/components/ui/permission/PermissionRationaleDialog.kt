@@ -33,7 +33,7 @@ import me.rerere.hugeicons.stroke.AlertCircle
 import me.rerere.rikkahub.R
 
 /**
- * 权限请求说明对话框
+ * Permission rationale dialog
  */
 @Composable
 internal fun PermissionRationaleDialog(
@@ -62,7 +62,7 @@ internal fun PermissionRationaleDialog(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 标题图标
+                // Title icon
                 Icon(
                     imageVector = HugeIcons.AlertCircle,
                     contentDescription = null,
@@ -72,7 +72,7 @@ internal fun PermissionRationaleDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 标题
+                // Title
                 val hasPermanentlyDenied = permanentlyDeniedPermissions.isNotEmpty()
                 Text(
                     text = stringResource(R.string.permission_diaog_title),
@@ -83,7 +83,7 @@ internal fun PermissionRationaleDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 说明文字
+                // Explanation text
                 Text(
                     text = if (hasPermanentlyDenied) {
                         stringResource(R.string.permission_desc_goto_setting)
@@ -97,7 +97,7 @@ internal fun PermissionRationaleDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 权限列表
+                // Permission list
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -113,9 +113,9 @@ internal fun PermissionRationaleDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // 按钮组
+                // Buttons
                 if (hasPermanentlyDenied) {
-                    // 有永久拒绝的权限，只显示前往设置和取消按钮
+                    // Some permissions are permanently denied: only show the go-to-settings and cancel buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -128,14 +128,14 @@ internal fun PermissionRationaleDialog(
                         }
 
                         Button(
-                            onClick = onProceed, // 这里会跳转到设置
+                            onClick = onProceed, // This opens the settings
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(stringResource(R.string.permission_go_to_settings))
                         }
                     }
                 } else {
-                    // 没有永久拒绝的权限，显示正常的授权按钮
+                    // No permanently denied permissions: show the normal grant buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -161,7 +161,7 @@ internal fun PermissionRationaleDialog(
 }
 
 /**
- * 单个权限项组件
+ * Single permission item component
  */
 @Composable
 private fun PermissionItem(
@@ -181,7 +181,7 @@ private fun PermissionItem(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            // 权限名称
+            // Permission name
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -230,7 +230,7 @@ private fun PermissionItem(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // 权限使用说明
+            // Permission usage explanation
             ProvideTextStyle(value = MaterialTheme.typography.bodySmall) {
                 permissionInfo.usage()
             }

@@ -63,13 +63,13 @@ private const val TAG = "PreferencesStore"
 
 private const val SETTINGS_STORE_NAME = "settings"
 
-// 读取失败时的最大重试次数
+// Maximum number of retries when reading fails
 private const val READ_MAX_RETRIES = 3
 
 @Volatile
 private var settingsDataStore: DataStore<Preferences>? = null
 
-// 进程内单例, 同一文件只能存在一个 DataStore 实例
+// In-process singleton; only one DataStore instance may exist per file
 private val Context.settingsStore: DataStore<Preferences>
     get() = settingsDataStore ?: synchronized(SettingsStore::class) {
         settingsDataStore ?: createSettingsDataStore(applicationContext).also { settingsDataStore = it }
@@ -79,7 +79,7 @@ private fun createSettingsDataStore(context: Context): DataStore<Preferences> {
     val file = context.preferencesDataStoreFile(SETTINGS_STORE_NAME)
     return PreferenceDataStoreFactory.create(
         corruptionHandler = ReplaceFileCorruptionHandler { exception ->
-            // 文件已损坏无法解析, 先留一份原文件用于排查/抢救, 再重建为空
+            // The file is corrupted and can't be parsed; keep a copy of the original for debugging/recovery, then rebuild it empty
             Log.e(TAG, "Settings datastore corrupted, resetting", exception)
             runCatching {
                 file.copyTo(File(file.parentFile, "${file.name}.corrupt-${System.currentTimeMillis()}"))
@@ -102,10 +102,10 @@ class SettingsStore(
     scope: AppScope,
 ) : KoinComponent {
     companion object {
-        // 版本号
+        // Version
         val VERSION = intPreferencesKey("data_version")
 
-        // UI设置
+        // UI settings
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val THEME_ID = stringPreferencesKey("theme_id")
         val CUSTOM_THEMES = stringPreferencesKey("custom_themes")
@@ -113,7 +113,7 @@ class SettingsStore(
         val NETWORK_SETTING = stringPreferencesKey("network_setting")
         val DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
 
-        // 模型选择
+        // Model selection
         val FAVORITE_MODELS = stringPreferencesKey("favorite_models")
         val SELECT_MODEL = stringPreferencesKey("chat_model")
         val FAST_MODEL = stringPreferencesKey("fast_model")
@@ -130,15 +130,15 @@ class SettingsStore(
         val COMPRESS_MODEL = stringPreferencesKey("compress_model")
         val COMPRESS_PROMPT = stringPreferencesKey("compress_prompt")
 
-        // 提供商
+        // Providers
         val PROVIDERS = stringPreferencesKey("providers")
 
-        // 助手
+        // Assistants
         val SELECT_ASSISTANT = stringPreferencesKey("select_assistant")
         val ASSISTANTS = stringPreferencesKey("assistants")
         val ASSISTANT_TAGS = stringPreferencesKey("assistant_tags")
 
-        // 搜索
+        // Search
         val SEARCH_SERVICES = stringPreferencesKey("search_services")
         val SEARCH_COMMON = stringPreferencesKey("search_common")
         val SEARCH_SELECTED = intPreferencesKey("search_selected")
@@ -166,18 +166,18 @@ class SettingsStore(
         val WEB_SERVER_ACCESS_PASSWORD = stringPreferencesKey("web_server_access_password")
         val WEB_SERVER_LOCALHOST_ONLY = booleanPreferencesKey("web_server_localhost_only")
 
-        // 提示词注入
+        // Prompt injections
         val MODE_INJECTIONS = stringPreferencesKey("mode_injections")
         val LOREBOOKS = stringPreferencesKey("lorebooks")
         val QUICK_MESSAGES = stringPreferencesKey("quick_messages")
 
-        // 备份提醒
+        // Backup reminder
         val BACKUP_REMINDER_CONFIG = stringPreferencesKey("backup_reminder_config")
 
-        // 统计
+        // Statistics
         val LAUNCH_COUNT = intPreferencesKey("launch_count")
 
-        // 赞助提醒
+        // Sponsor reminder
         val SPONSOR_ALERT_DISMISSED_AT = intPreferencesKey("sponsor_alert_dismissed_at")
 
         // Uses the same DataStore singleton without starting settings flows or requiring Koin.
@@ -248,8 +248,8 @@ class SettingsStore(
 
     private val dataStore = context.settingsStore
 
-    // 读取失败时绝不能回退为空配置, 否则默认值会被当成用户数据写回, 覆盖全部设置
-    // 偶发 IO 错误重试, 仍失败则向上抛出 (文件损坏由 corruptionHandler 处理)
+    // A read failure must never fall back to an empty config, otherwise the defaults would be written back as user data and overwrite all settings
+    // Retry transient IO errors; if it still fails, rethrow (file corruption is handled by corruptionHandler)
     val settingsFlowRaw = dataStore.data
         .retryWhen { cause, attempt ->
             val shouldRetry = cause is IOException && cause !is CorruptionException && attempt < READ_MAX_RETRIES
@@ -374,7 +374,7 @@ class SettingsStore(
             )
         }
         .map { settings ->
-            // 去重并清理无效引用
+            // Deduplicate and clean up invalid references
             val validMcpServerIds = settings.mcpServers.map { it.id }.toSet()
             val validModeInjectionIds = settings.modeInjections.map { it.id }.toSet()
             val validLorebookIds = settings.lorebooks.map { it.id }.toSet()
@@ -398,19 +398,19 @@ class SettingsStore(
                 },
                 assistants = settings.assistants.distinctBy { it.id }.map { assistant ->
                     assistant.copy(
-                        // 过滤掉不存在的 MCP 服务器 ID
+                        // Drop MCP server IDs that no longer exist
                         mcpServers = assistant.mcpServers.filter { serverId ->
                             serverId in validMcpServerIds
                         }.toSet(),
-                        // 过滤掉不存在的模式注入 ID
+                        // Drop mode injection IDs that no longer exist
                         modeInjectionIds = assistant.modeInjectionIds.filter { id ->
                             id in validModeInjectionIds
                         }.toSet(),
-                        // 过滤掉不存在的 Lorebook ID
+                        // Drop Lorebook IDs that no longer exist
                         lorebookIds = assistant.lorebookIds.filter { id ->
                             id in validLorebookIds
                         }.toSet(),
-                        // 过滤掉不存在的快捷消息 ID
+                        // Drop quick message IDs that no longer exist
                         quickMessageIds = assistant.quickMessageIds.filter { id ->
                             id in validQuickMessageIds
                         }.toSet()
@@ -450,7 +450,7 @@ class SettingsStore(
         update(fn(settingsFlow.value))
     }
 
-    // 只原子地修改单个 key, 不能用 update() 写回整份快照
+    // Atomically modify only a single key; don't write back the whole snapshot with update()
     suspend fun incrementLaunchCount(): Int {
         var count = 0
         dataStore.edit { preferences ->
@@ -597,7 +597,7 @@ data class Settings(
     val sponsorAlertDismissedAt: Int = 0,
 ) {
     companion object {
-        // 构造一个用于初始化的settings, 但它不能用于保存，防止使用初始值存储
+        // Builds settings used for initialization; they must not be saved, to avoid persisting the initial values
         fun dummy() = Settings(init = true)
     }
 }

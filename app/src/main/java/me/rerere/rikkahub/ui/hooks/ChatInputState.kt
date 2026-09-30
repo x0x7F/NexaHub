@@ -127,8 +127,8 @@ class ChatInputState {
     }
 
     /**
-     * 仅删除当前输入组件临时新增的本地文件。
-     * 编辑历史消息时，原有附件不在这里删除，由会话层统一做差异清理。
+     * Only deletes local files temporarily added by the current input component.
+     * When editing a past message, its original attachments aren't deleted here; the conversation layer does the diff-based cleanup.
      */
     fun shouldDeleteFileOnRemove(part: UIMessagePart): Boolean {
         val url = part.attachmentUrlOrNull() ?: return false

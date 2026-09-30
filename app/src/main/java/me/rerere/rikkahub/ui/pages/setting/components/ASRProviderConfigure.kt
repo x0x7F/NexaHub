@@ -531,7 +531,7 @@ private fun StepASRConfiguration(
         description = { Text(stringResource(R.string.setting_asr_configure_step_hotwords_desc)) }
     ) {
         OutlinedTextField(
-            // 用逗号分隔展示, 输入时按逗号 split 回 List
+            // Shown comma-separated; input is split back into a List on commas
             value = setting.hotwords.joinToString(","),
             onValueChange = { text ->
                 val list = text.split(",")
@@ -540,7 +540,7 @@ private fun StepASRConfiguration(
                 onValueChange(setting.copy(hotwords = list))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("热词1, 热词2, 热词3") }
+            placeholder = { Text("hotword1, hotword2, hotword3") }
         )
     }
 }

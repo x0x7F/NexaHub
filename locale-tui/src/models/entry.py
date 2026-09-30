@@ -10,7 +10,7 @@ class TranslationEntry:
 
     key: str  # string name
     translations: dict[str, Optional[str]] = field(default_factory=dict)
-    # translations: {"values": "Hello", "values-zh": "你好", ...}
+    # translations: {"values": "Hello", "values-ja": "こんにちは", ...}
     is_dead: bool = False  # whether this is an unreferenced dead entry
 
     def get_translation(self, lang_code: str) -> Optional[str]:

@@ -13,8 +13,8 @@ class AppEventBus {
     }
 
     /**
-     * 非挂起发送，缓冲满时丢弃事件并返回 false。
-     * 用于高频且允许丢失的事件（如流式生成更新），避免反压发送方。
+     * Non-suspending send; drops the event and returns false when the buffer is full.
+     * Used for high-frequency events that may be lost (such as streaming generation updates), to avoid back-pressuring the sender.
      */
     fun tryEmit(event: AppEvent): Boolean = _events.tryEmit(event)
 }

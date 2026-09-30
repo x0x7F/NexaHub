@@ -205,9 +205,9 @@ internal class WorkspaceTerminalViewClient(
     }
 
     /**
-     * 检测点击位置是否落在一个 URL 上, 是则用浏览器打开并返回 true.
-     * TerminalView 0.118.0 没有内置链接点击, 这里基于 getColumnAndRow() + 屏幕缓冲文本自行实现,
-     * 并通过 getLineWrap() 还原被软换行拆开的长 URL.
+     * Detect whether the tap position is on a URL; if so, open it in the browser and return true.
+     * TerminalView 0.118.0 has no built-in link tapping, so this is implemented with getColumnAndRow() + the screen buffer text,
+     * using getLineWrap() to reassemble long URLs split by soft wrapping.
      */
     private fun openUrlAtTap(e: MotionEvent): Boolean {
         val view = terminalView ?: return false
@@ -224,9 +224,9 @@ internal class WorkspaceTerminalViewClient(
         if (column < 0 || column >= columns) return false
         if (row < minAccessibleRow || row > maxAccessibleRow) return false
 
-        // 向上/向下扩展到完整逻辑行(被软换行拆开的行 mLineWrap 为 true).
-        // 限制最多扩展 URL_MAX_WRAP_ROWS 行: 真实 URL 跨不了这么多行, 同时避免连续无换行的
-        // 长输出导致单次点击遍历整个 transcript.
+        // Extend up/down to the full logical line (lines split by soft wrapping have mLineWrap set to true).
+        // Extend at most URL_MAX_WRAP_ROWS lines: a real URL can't span that many lines, and this keeps long output without
+        // line breaks from making a single tap walk the whole transcript.
         val minRow = (row - URL_MAX_WRAP_ROWS).coerceAtLeast(minAccessibleRow)
         val maxRow = (row + URL_MAX_WRAP_ROWS).coerceAtMost(maxAccessibleRow)
         var startRow = row
@@ -238,7 +238,7 @@ internal class WorkspaceTerminalViewClient(
         var tapIndex = -1
         for (r in startRow..endRow) {
             if (r == row) {
-                // 用 [0, column] 这段文本的长度精确换算点击字符在本行内的下标, 避免宽字符错位
+                // Use the length of the text in [0, column] to compute the tapped character's index in the line exactly, avoiding misalignment from wide characters
                 tapIndex = line.length + (screen.getSelectedText(0, r, column, r).length - 1).coerceAtLeast(0)
             }
             line.append(screen.getSelectedText(0, r, columns - 1, r))
@@ -328,13 +328,13 @@ private const val WORKSPACE_DIR = "/workspace"
 private const val SKILLS_DIR = "/skills"
 private const val BUILTIN_SKILLS_DIR = "/builtin_skills"
 
-// 一个 URL 最多还原跨越的软换行行数(向上/向下各算), 足够覆盖任意真实 URL
+// Maximum number of soft-wrapped lines a URL is reassembled across (counted up and down separately), enough for any real URL
 private const val URL_MAX_WRAP_ROWS = 50
 
 private val URL_REGEX =
     Regex("""(https?|ftp)://[\w\-._~:/?#\[\]@!$&'()*+,;=%]+""", RegexOption.IGNORE_CASE)
 
-// 终端里 URL 后面常跟标点(行尾句号、被括号包裹等), 打开前去掉这些结尾字符
+// In the terminal, URLs are often followed by punctuation (a period at the end of the line, enclosing brackets, etc.); strip these trailing characters before opening
 private val URL_TRAILING_TRIM = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']', '}', '\'', '"')
 
 private fun Context.activeDnsServers(): List<String> {

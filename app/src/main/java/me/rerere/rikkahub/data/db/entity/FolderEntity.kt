@@ -6,11 +6,11 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
- * 会话文件夹（助手内分组）。
+ * Conversation folder (grouping within an assistant).
  *
- * 一个文件夹隶属于某个助手（assistant_id），会话通过 [ConversationEntity.folderId] 关联到文件夹。
- * 这里不使用 Room 外键，删除文件夹时由 Repository 层手动把归属会话的 folder_id 清空，
- * 避免级联删除误删会话，也避免外键迁移的复杂度。
+ * A folder belongs to an assistant (assistant_id), and conversations link to it via [ConversationEntity.folderId].
+ * No Room foreign key is used; when a folder is deleted, the repository layer manually clears folder_id on its conversations,
+ * avoiding accidental cascade deletion of conversations and the complexity of foreign key migrations.
  */
 @Entity(
     tableName = "conversation_folder",

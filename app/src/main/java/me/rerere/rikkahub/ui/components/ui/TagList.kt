@@ -46,7 +46,7 @@ fun TagsInput(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
 
-    // 根据value获取对应的tags
+    // Get the tags for the value
     val selectedTags = tags.filter { tag -> value.contains(tag.id) }
 
     FlowRow(
@@ -55,7 +55,7 @@ fun TagsInput(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         itemVerticalAlignment = Alignment.CenterVertically
     ) {
-        // 显示已选择的tags
+        // Show the selected tags
         selectedTags.fastForEach { tag ->
             InputChip(onClick = {}, label = {
                 Text(tag.name)
@@ -75,7 +75,7 @@ fun TagsInput(
             })
         }
 
-        // 添加按钮
+        // Add button
         Surface(
             shape = CircleShape,
             tonalElevation = 2.dp,
@@ -93,12 +93,12 @@ fun TagsInput(
         }
     }
 
-    // 添加tag对话框
+    // Add tag dialog
     if (showAddDialog) {
         var tagName by remember { mutableStateOf("") }
         var showError by remember { mutableStateOf(false) }
 
-        // 获取未选择的标签
+        // Get the unselected tags
         val unselectedTags = tags.filter { tag -> !value.contains(tag.id) }
 
         AlertDialog(onDismissRequest = {
@@ -109,7 +109,7 @@ fun TagsInput(
             Text(stringResource(R.string.tag_input_dialog_title))
         }, text = {
             Column {
-                // 显示现有标签列表（如果有未选择的标签）
+                // Show the existing tag list (if there are unselected tags)
                 if (unselectedTags.isNotEmpty()) {
                     Text(
                         text = stringResource(R.string.tag_input_dialog_existing_tags),
@@ -147,7 +147,7 @@ fun TagsInput(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // 输入新标签名称
+                // Enter a new tag name
                 OutlinedTextField(
                     value = tagName,
                     onValueChange = {
@@ -161,7 +161,7 @@ fun TagsInput(
                     isError = showError
                 )
 
-                // 显示错误信息
+                // Show the error message
                 if (showError) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -176,14 +176,14 @@ fun TagsInput(
                 onClick = {
                     if (tagName.isNotBlank()) {
                         val trimmedName = tagName.trim()
-                        // 检查是否已存在同名标签
+                        // Check whether a tag with the same name already exists
                         val existingTag =
                             tags.find { it.name.equals(trimmedName, ignoreCase = true) }
                         if (existingTag != null) {
-                            // 如果存在同名标签，显示错误信息
+                            // If a tag with the same name exists, show an error
                             showError = true
                         } else {
-                            // 创建新标签
+                            // Create the new tag
                             val newTag = Tag(id = Uuid.random(), name = trimmedName)
                             onValueChange(value + newTag.id, tags + newTag)
                             showAddDialog = false

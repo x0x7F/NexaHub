@@ -10,11 +10,11 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 创建一个防抖函数包装器
+ * Create a debounced function wrapper
  *
- * @param delayMillis 延迟时间（毫秒）
- * @param function 要执行的函数
- * @return 包装后的防抖函数
+ * @param delayMillis the delay (milliseconds)
+ * @param function the function to run
+ * @return the debounced function
  */
 @Composable
 fun <T> useDebounce(
@@ -36,11 +36,11 @@ fun <T> useDebounce(
 }
 
 /**
- * 创建一个节流函数包装器
+ * Create a throttled function wrapper
  *
- * @param intervalMillis 间隔时间（毫秒）
- * @param function 要执行的函数
- * @return 包装后的节流函数
+ * @param intervalMillis the interval (milliseconds)
+ * @param function the function to run
+ * @return the throttled function
  */
 @Composable
 fun <T> useThrottle(
@@ -62,11 +62,11 @@ fun <T> useThrottle(
                     delay(intervalMillis)
                     isThrottling.set(false)
 
-                    // 如果在节流期间有新的参数，则在节流结束后执行一次
+                    // If new arguments arrived during the throttle window, run once more after it ends
                     latestParam.value?.let { latestValue ->
-                        // 重置参数
+                        // Reset the arguments
                         latestParam.value = null
-                        // 用最新的参数再次调用节流函数
+                        // Call the throttled function again with the latest arguments
                         function(latestValue)
                     }
                 }

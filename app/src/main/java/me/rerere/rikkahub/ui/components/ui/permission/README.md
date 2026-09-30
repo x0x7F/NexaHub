@@ -1,20 +1,20 @@
-# 权限管理库使用说明
+# Permission Library Usage
 
-这是一个完善的 Android 运行时权限请求库，支持自动显示权限请求原因对话框。
+A complete Android runtime permission request library that automatically shows a dialog explaining why a permission is requested.
 
-## 主要特性
+## Key features
 
-- 🎯 **声明式API**: 使用 Compose 风格的声明式权限管理
-- 🔄 **状态管理**: 自动跟踪权限状态变化
-- 💬 **智能对话框**: 自动显示权限请求原因说明
-- 🎨 **Material Design 3**: 遵循最新设计规范
-- 🔧 **灵活配置**: 支持必需/可选权限分类
-- 🔄 **生命周期感知**: 应用从后台回到前台时自动刷新权限状态
-- ⚡ **永久拒绝处理**: 智能处理永久拒绝的权限，引导用户到设置页面
+- 🎯 **Declarative API**: Compose-style declarative permission management
+- 🔄 **State management**: automatically tracks permission state changes
+- 💬 **Smart dialog**: automatically explains why a permission is requested
+- 🎨 **Material Design 3**: follows the latest design guidelines
+- 🔧 **Flexible configuration**: supports required/optional permissions
+- 🔄 **Lifecycle aware**: refreshes permission states when the app returns from the background
+- ⚡ **Permanent denial handling**: handles permanently denied permissions and guides the user to the settings page
 
-## 基本使用
+## Basic usage
 
-### 1. 单个权限
+### 1. Single permission
 
 ```kotlin
 @Composable
@@ -23,7 +23,7 @@ fun CameraScreen() {
         permission = Manifest.permission.CAMERA,
         usage = { 
             Text(
-                text = "需要相机权限来拍照和录制视频",
+                text = "Camera permission is needed to take photos and record videos",
                 style = MaterialTheme.typography.bodyMedium
             )
         },
@@ -34,13 +34,13 @@ fun CameraScreen() {
         PermissionCheck(
             permissionState = cameraPermission,
             onGranted = {
-                // 权限已授权，显示相机界面
+                // Permission granted: show the camera UI
                 CameraContent()
             },
             onDenied = { state ->
-                // 权限被拒绝，显示自定义内容
+                // Permission denied: show custom content
                 Button(onClick = { state.requestPermissions() }) {
-                    Text("请求相机权限")
+                    Text("Request camera permission")
                 }
             }
         )
@@ -48,7 +48,7 @@ fun CameraScreen() {
 }
 ```
 
-### 2. 多个权限
+### 2. Multiple permissions
 
 ```kotlin
 @Composable
@@ -58,21 +58,21 @@ fun MediaScreen() {
             PermissionInfo(
                 permission = Manifest.permission.CAMERA,
                 usage = { 
-                    Text("需要相机权限来拍照")
+                    Text("Camera permission is needed to take photos")
                 },
                 required = true
             ),
             PermissionInfo(
                 permission = Manifest.permission.RECORD_AUDIO,
                 usage = { 
-                    Text("需要录音权限来录制视频")
+                    Text("Microphone permission is needed to record video")
                 },
                 required = false
             ),
             PermissionInfo(
                 permission = Manifest.permission.READ_EXTERNAL_STORAGE,
                 usage = { 
-                    Text("需要存储权限来保存媒体文件")
+                    Text("Storage permission is needed to save media files")
                 },
                 required = true
             )
@@ -82,15 +82,15 @@ fun MediaScreen() {
     PermissionManager(permissionState = mediaPermissions) {
         when {
             mediaPermissions.allRequiredPermissionsGranted -> {
-                // 所有必需权限已授权
+                // All required permissions granted
                 MediaContent(hasAudioPermission = mediaPermissions.permissionStates[Manifest.permission.RECORD_AUDIO] == PermissionStatus.Granted)
             }
             else -> {
-                // 显示权限请求界面
+                // Show the permission request UI
                 Column {
-                    Text("需要权限才能继续")
+                    Text("Permissions are required to continue")
                     Button(onClick = { mediaPermissions.requestPermissions() }) {
-                        Text("请求权限")
+                        Text("Request permissions")
                     }
                 }
             }
@@ -99,35 +99,35 @@ fun MediaScreen() {
 }
 ```
 
-### 3. 权限状态检查
+### 3. Checking permission state
 
 ```kotlin
 @Composable
 fun PermissionStatusExample() {
     val permissionState = rememberPermissionState(...)
     
-    // 检查所有权限
+    // Check all permissions
     if (permissionState.allPermissionsGranted) {
-        Text("所有权限已授权")
+        Text("All permissions granted")
     }
     
-    // 检查必需权限
+    // Check required permissions
     if (permissionState.allRequiredPermissionsGranted) {
-        Text("必需权限已授权")
+        Text("Required permissions granted")
     }
     
-    // 检查单个权限
+    // Check a single permission
     when (permissionState.permissionStates[Manifest.permission.CAMERA]) {
-        PermissionStatus.Granted -> Text("相机权限已授权")
-        PermissionStatus.Denied -> Text("相机权限被拒绝")
-        PermissionStatus.DeniedPermanently -> Text("相机权限被永久拒绝")
-        PermissionStatus.NotRequested -> Text("相机权限未请求")
-        null -> Text("权限状态未知")
+        PermissionStatus.Granted -> Text("Camera permission granted")
+        PermissionStatus.Denied -> Text("Camera permission denied")
+        PermissionStatus.DeniedPermanently -> Text("Camera permission permanently denied")
+        PermissionStatus.NotRequested -> Text("Camera permission not requested")
+        null -> Text("Permission state unknown")
     }
 }
 ```
 
-### 4. 手动权限管理
+### 4. Manual permission management
 
 ```kotlin
 @Composable
@@ -136,87 +136,87 @@ fun ManualPermissionExample() {
     
     Column {
         Button(onClick = { 
-            // 请求所有权限
+            // Request all permissions
             permissionState.requestPermissions() 
         }) {
-            Text("请求所有权限")
+            Text("Request all permissions")
         }
         
         Button(onClick = { 
-            // 请求特定权限
+            // Request specific permissions
             permissionState.requestPermission(Manifest.permission.CAMERA) 
         }) {
-            Text("请求相机权限")
+            Text("Request camera permission")
         }
         
         Button(onClick = { 
-            // 跳转到应用设置
+            // Open the app settings
             permissionState.openAppSettings() 
         }) {
-            Text("前往设置")
+            Text("Go to settings")
         }
         
         Button(onClick = { 
-            // 更新权限状态
+            // Update the permission states
             permissionState.updatePermissionStates() 
         }) {
-            Text("刷新权限状态")
+            Text("Refresh permission states")
         }
     }
 }
 ```
 
-## API 参考
+## API reference
 
 ### PermissionInfo
 
 ```kotlin
 data class PermissionInfo(
-    val permission: String,        // Android权限字符串
-    val usage: @Composable () -> Unit,  // 权限使用说明
-    val required: Boolean = false  // 是否为必需权限
+    val permission: String,        // Android permission string
+    val usage: @Composable () -> Unit,  // Permission usage explanation
+    val required: Boolean = false  // Whether the permission is required
 )
 ```
 
 ### PermissionState
 
-主要属性：
-- `permissionStates: Map<String, PermissionStatus>` - 权限状态映射
-- `allPermissionsGranted: Boolean` - 是否所有权限都已授权
-- `allRequiredPermissionsGranted: Boolean` - 是否所有必需权限都已授权
-- `deniedPermissions: List<PermissionInfo>` - 被拒绝的权限列表
+Main properties:
+- `permissionStates: Map<String, PermissionStatus>` - permission state map
+- `allPermissionsGranted: Boolean` - whether all permissions are granted
+- `allRequiredPermissionsGranted: Boolean` - whether all required permissions are granted
+- `deniedPermissions: List<PermissionInfo>` - list of denied permissions
 
-主要方法：
-- `requestPermissions()` - 请求所有未授权权限
-- `requestPermission(permission: String)` - 请求特定权限
-- `updatePermissionStates()` - 更新权限状态
-- `refreshPermissionStates()` - 强制刷新权限状态（用于生命周期变化时）
-- `openAppSettings()` - 跳转到应用设置页面
+Main methods:
+- `requestPermissions()` - request all permissions that aren't granted
+- `requestPermission(permission: String)` - request a specific permission
+- `updatePermissionStates()` - update the permission states
+- `refreshPermissionStates()` - force-refresh the permission states (used on lifecycle changes)
+- `openAppSettings()` - open the app settings page
 
 ### PermissionStatus
 
 ```kotlin
 enum class PermissionStatus {
-    NotRequested,      // 未请求
-    Granted,          // 已授权
-    Denied,           // 被拒绝但可以再次请求
-    DeniedPermanently // 被拒绝且用户选择"不再询问"
+    NotRequested,      // Not requested
+    Granted,          // Granted
+    Denied,           // Denied but can be requested again
+    DeniedPermanently // Denied and the user chose "Don't ask again"
 }
 ```
 
-## 注意事项
+## Notes
 
-1. **Activity 要求**: `rememberPermissionState` 必须在 `ComponentActivity` 中使用
-2. **权限声明**: 确保在 `AndroidManifest.xml` 中声明了所需权限
-3. **生命周期感知**: 权限状态会在应用从后台回到前台时自动刷新
-4. **对话框**: 权限说明对话框会在需要时自动显示
-5. **设置跳转**: 对于永久拒绝的权限，会提供跳转到设置的选项
-6. **状态同步**: 用户在设置中修改权限后，回到应用会立即更新状态
+1. **Activity requirement**: `rememberPermissionState` must be used in a `ComponentActivity`
+2. **Permission declarations**: make sure the required permissions are declared in `AndroidManifest.xml`
+3. **Lifecycle awareness**: permission states refresh automatically when the app returns from the background
+4. **Dialog**: the permission rationale dialog is shown automatically when needed
+5. **Settings redirect**: for permanently denied permissions, an option to open the settings is offered
+6. **State sync**: after the user changes permissions in settings, the state updates as soon as they return to the app
 
-## 最佳实践
+## Best practices
 
-1. **按需请求**: 只在需要使用功能时请求权限
-2. **清晰说明**: 在 `usage` 中清晰说明权限的用途
-3. **分类管理**: 合理设置 `required` 标志区分必需和可选权限
-4. **降级体验**: 为权限被拒绝的情况提供降级体验
-5. **状态持久**: 权限状态会在配置变更时保持
+1. **Request on demand**: only request a permission when the feature needs it
+2. **Explain clearly**: clearly explain what the permission is for in `usage`
+3. **Categorize**: set the `required` flag appropriately to distinguish required and optional permissions
+4. **Graceful degradation**: provide a degraded experience when a permission is denied
+5. **Persistent state**: permission states survive configuration changes

@@ -15,10 +15,10 @@ data class McpCommonOptions(
 )
 
 /**
- * OAuth 2.1 授权状态，遵循 MCP 授权规范 (2025-11-25)。
+ * OAuth 2.1 authorization state, following the MCP authorization spec (2025-11-25).
  *
- * 持久化了动态客户端注册结果、授权服务器端点以及令牌，用于对需要
- * OAuth 授权的 MCP Server 注入 `Authorization: Bearer` 请求头并支持刷新。
+ * Persists the dynamic client registration result, authorization server endpoints and tokens, used to inject an
+ * `Authorization: Bearer` header for MCP servers that require OAuth, with refresh support.
  */
 @Serializable
 data class McpOAuthState(
@@ -32,11 +32,11 @@ data class McpOAuthState(
     val scope: String? = null,
     val accessToken: String? = null,
     val refreshToken: String? = null,
-    val expiresAt: Long = 0L, // epoch millis, 0 表示未知/不过期
+    val expiresAt: Long = 0L, // epoch millis; 0 means unknown / never expires
 ) {
     val isAuthorized: Boolean get() = !accessToken.isNullOrBlank()
 
-    // 脱敏 toString，避免 client_secret / token 随 config 打印到日志
+    // Redacted toString so client_secret / token aren't logged along with the config
     override fun toString(): String =
         "McpOAuthState(enabled=$enabled, clientId=$clientId, clientSecret=${clientSecret.masked()}, " +
             "authorizationEndpoint=$authorizationEndpoint, tokenEndpoint=$tokenEndpoint, " +
@@ -94,7 +94,7 @@ sealed class McpServerConfig {
     }
 }
 
-/** MCP Server 的连接地址（作为 OAuth 的 canonical resource 标识）。 */
+/** The MCP server's connection URL (used as the OAuth canonical resource identifier). */
 val McpServerConfig.serverUrl: String
     get() = when (this) {
         is McpServerConfig.SseTransportServer -> url

@@ -14,7 +14,7 @@ import me.rerere.ai.core.MessageRole
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Conversation
 
-// 消息节点数量警告阈值
+// Warning threshold for the number of message nodes
 const val MESSAGE_NODE_WARNING_THRESHOLD = 768
 const val LAST_ASSISTANT_INPUT_TOKEN_WARNING_THRESHOLD = 300_000
 

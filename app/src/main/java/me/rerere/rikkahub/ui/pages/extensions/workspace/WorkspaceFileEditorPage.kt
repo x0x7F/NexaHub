@@ -41,9 +41,9 @@ import me.rerere.workspace.WorkspaceStorageArea
 import org.koin.compose.koinInject
 
 /**
- * 工作区文本文件编辑/预览页.
+ * Workspace text file editor/preview page.
  *
- * FILES 区文件可编辑并保存; LINUX (rootfs) 区文件仅只读预览 (readOnly), 避免误改系统文件.
+ * Files in the FILES area can be edited and saved; files in the LINUX (rootfs) area are read-only previews (readOnly), to avoid modifying system files by mistake.
  */
 @Composable
 fun WorkspaceFileEditorPage(
@@ -60,8 +60,8 @@ fun WorkspaceFileEditorPage(
     val supportsPreview = extension in setOf("html", "htm", "svg")
     var showPreview by rememberSaveable(id, area, path) { mutableStateOf(supportsPreview) }
 
-    // 不能用 rememberTextFieldState: 它会把全文存进 saved state Bundle, 大文件切后台时触发 TransactionTooLargeException (#1953).
-    // 内容本就由下方 LaunchedEffect 从磁盘加载, 无需 saveable.
+    // Can't use rememberTextFieldState: it stores the full text in the saved state Bundle, which triggers TransactionTooLargeException for large files when backgrounded (#1953).
+    // The content is loaded from disk by the LaunchedEffect below anyway, so it doesn't need to be saveable.
     val textState = remember(id, area, path) { TextFieldState() }
     var loading by remember { mutableStateOf(true) }
     var loadError by remember { mutableStateOf<String?>(null) }
@@ -76,7 +76,7 @@ fun WorkspaceFileEditorPage(
             textState.setTextAndPlaceCursorAtEnd(content)
             loading = false
         }.onFailure {
-            loadError = it.message ?: "读取文件失败"
+            loadError = it.message ?: "Failed to read the file"
             loading = false
         }
     }
@@ -95,7 +95,7 @@ fun WorkspaceFileEditorPage(
                 actions = {
                     if (supportsPreview && !loading && loadError == null) {
                         TextButton(onClick = { showPreview = !showPreview }) {
-                            Text(if (showPreview) "源码" else "预览")
+                            Text(if (showPreview) "Source" else "Preview")
                         }
                     }
                     if (editable && !loading && loadError == null) {
@@ -112,9 +112,9 @@ fun WorkspaceFileEditorPage(
                                             overwrite = true,
                                         )
                                     }.onSuccess {
-                                        toaster.show("已保存", type = ToastType.Success)
+                                        toaster.show("Saved", type = ToastType.Success)
                                     }.onFailure {
-                                        toaster.show(it.message ?: "保存失败", type = ToastType.Error)
+                                        toaster.show(it.message ?: "Save failed", type = ToastType.Error)
                                     }
                                     saving = false
                                 }

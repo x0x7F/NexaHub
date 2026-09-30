@@ -17,7 +17,7 @@ jobs:
             const isOwner = author === context.repo.owner;
 
             const body = context.payload.issue.body;
-            const templateMarkers = ['问题描述', '功能描述'];
+            const templateMarkers = ['Problem Description', 'Feature Description'];
             const usedTemplate = body && templateMarkers.some(marker => body.includes(marker));
 
             if (!isOwner && !usedTemplate) {
@@ -27,14 +27,6 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: context.payload.issue.number,
                 body: [
-                  '感谢你的反馈！此 Issue 未使用官方模板，已自动关闭。',
-                  '请点击下方链接重新提交，并选择对应的模板填写完整信息：',
-                  '',
-                  `- 🐛 [Bug 报告](${repoUrl}/issues/new?template=bug-report.yml)`,
-                  `- ✨ [功能请求](${repoUrl}/issues/new?template=feature-request.yml)`,
-                  '',
-                  '---',
-                  '',
                   'Thanks for your feedback! This issue was closed because it was not submitted using the official template.',
                   'Please resubmit using one of the templates below:',
                   '',

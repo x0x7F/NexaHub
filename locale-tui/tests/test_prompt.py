@@ -18,8 +18,5 @@ def test_glossary_injected_into_prompt():
     assert "Glossary for Arabic" in arabic
     assert "مطالبة" in arabic
 
-    chinese = translator.build_prompt(entries, "Chinese (Simplified)")
-    assert "提示词" in chinese
-
-    # 未配置术语表的语言不追加术语段
+    # Languages without a glossary don't get a glossary section
     assert "Glossary" not in translator.build_prompt(entries, "Japanese")

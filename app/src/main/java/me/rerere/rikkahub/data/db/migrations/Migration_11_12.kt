@@ -20,7 +20,7 @@ val Migration_11_12 = object : Migration(11, 12) {
         DatabaseMigrationTracker.onMigrationStart(11, 12)
         db.beginTransaction()
         try {
-            // 1. 创建 message_node 表
+            // 1. Create the message_node table
             db.execSQL(
                 """
                 CREATE TABLE IF NOT EXISTS message_node (
@@ -35,7 +35,7 @@ val Migration_11_12 = object : Migration(11, 12) {
             )
             db.execSQL("CREATE INDEX IF NOT EXISTS index_message_node_conversation_id ON message_node(conversation_id)")
 
-            // 2. 从 conversationentity.nodes 迁移数据到 message_node
+            // 2. Migrate data from conversationentity.nodes to message_node
             val cursor = db.query("SELECT id FROM conversationentity")
             var migratedCount = 0
             var nodeCount = 0
@@ -53,8 +53,8 @@ val Migration_11_12 = object : Migration(11, 12) {
                             continue
                         }
                         val nodesJson = nodeCursor.getString(0)
-                        // 使用原始 JSON 解析，避免因 UIMessagePart 类型名变更导致的反序列化失败
-                        // 同时应用类型名映射（与 Migration_13_14 相同的逻辑）
+                        // Parse the raw JSON to avoid deserialization failures caused by UIMessagePart type name changes
+                        // and apply the type name mapping at the same time (same logic as Migration_13_14)
                         val nodesArray = runCatching {
                             JsonInstant.parseToJsonElement(nodesJson) as? JsonArray
                         }.getOrNull() ?: JsonArray(emptyList())
@@ -62,7 +62,7 @@ val Migration_11_12 = object : Migration(11, 12) {
                         nodesArray.forEachIndexed { index, nodeElement ->
                             val nodeObject = nodeElement as? JsonObject ?: return@forEachIndexed
                             val messagesElement = nodeObject["messages"] ?: JsonArray(emptyList())
-                            // 迁移消息中的 UIMessagePart 类型名（旧完整类名 -> 新 @SerialName）
+                            // Migrate the UIMessagePart type names in the messages (old fully qualified name -> new @SerialName)
                             val migratedMessages = migrateMessagesElement(messagesElement)
                             val messagesJson = JsonInstant.encodeToString(migratedMessages)
                             val selectIndex = runCatching {

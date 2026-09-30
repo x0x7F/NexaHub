@@ -35,58 +35,58 @@ import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 
 /**
- * 工具调用的渲染上下文, 预解析好工具入参与输出, 避免各渲染器重复解析
+ * Rendering context of a tool call, with the tool input and output pre-parsed so each renderer doesn't parse them again
  */
 data class ToolUIContext(
     val tool: UIMessagePart.Tool,
-    /** 工具入参 ([UIMessagePart.Tool.input] 的 JSON 解析结果) */
+    /** Tool input (the parsed JSON of [UIMessagePart.Tool.input]) */
     val arguments: JsonElement,
-    /** 输出文本部件解析出的 JSON, 工具未执行时为 null */
+    /** JSON parsed from the output text part; null when the tool hasn't run */
     val content: JsonElement?,
-    /** 该工具调用是否在生成中 */
+    /** Whether this tool call is still generating */
     val loading: Boolean,
 )
 
 /**
- * 单个工具的 UI 渲染器
+ * UI renderer for a single tool
  *
- * 在 [ToolUIRegistry] 注册后, 聊天消息中对应的工具调用将使用该渲染器展示;
- * 未注册的工具 fallback 到接口的默认实现 (通用标题/图标 + JSON 详情)
+ * Once registered in [ToolUIRegistry], matching tool calls in chat messages are shown with this renderer;
+ * unregistered tools fall back to the interface's default implementation (generic title/icon + JSON details)
  */
 interface ToolUIRenderer {
-    /** 渲染器对应的工具名 */
+    /** The tool name this renderer handles */
     val toolName: String
 
-    /** 折叠步骤的图标 */
+    /** Icon of the collapsed step */
     fun icon(context: ToolUIContext): ImageVector = HugeIcons.Tools
 
-    /** 折叠步骤的标题 */
+    /** Title of the collapsed step */
     @Composable
     fun title(context: ToolUIContext): String =
         stringResource(R.string.chat_message_tool_call_generic, context.tool.toolName)
 
-    /** 步骤展开时是否显示内联摘要 */
+    /** Whether to show an inline summary when the step is expanded */
     fun hasSummary(context: ToolUIContext): Boolean = false
 
-    /** 步骤展开时的内联摘要 */
+    /** Inline summary when the step is expanded */
     @Composable
     fun Summary(context: ToolUIContext) {
     }
 
-    /** 点击步骤后的详情, 渲染在 BottomSheet 内 */
+    /** Details shown after tapping the step, rendered in a BottomSheet */
     @Composable
     fun Preview(context: ToolUIContext, onDismissRequest: () -> Unit) {
         DefaultToolPreview(context = context)
     }
 }
 
-/** 未注册工具使用的默认渲染器, 全部行为来自 [ToolUIRenderer] 的默认实现 */
+/** Default renderer for unregistered tools; all behavior comes from the default implementation of [ToolUIRenderer] */
 private object DefaultToolUIRenderer : ToolUIRenderer {
     override val toolName: String get() = ""
 }
 
 /**
- * 工具 UI 渲染器注册表, 为新工具定制渲染时在 [renderers] 中注册即可
+ * Registry of tool UI renderers; to customize rendering for a new tool, register it in [renderers]
  */
 object ToolUIRegistry {
     private val renderers: Map<String, ToolUIRenderer> = listOf(
@@ -109,7 +109,7 @@ object ToolUIRegistry {
         ShellToolUI,
     ).associateBy { it.toolName }
 
-    /** 查找工具对应的渲染器, 未注册时返回默认渲染器 */
+    /** Find the renderer for a tool, returning the default renderer if none is registered */
     fun resolve(toolName: String): ToolUIRenderer = renderers[toolName] ?: DefaultToolUIRenderer
 }
 
@@ -117,9 +117,9 @@ internal fun JsonElement?.getStringContent(key: String): String? =
     this?.jsonObjectOrNull?.get(key)?.jsonPrimitiveOrNull?.contentOrNull
 
 /**
- * 默认工具详情: 入参与输出的 JSON 高亮展示
+ * Default tool details: highlighted JSON of the input and output
  *
- * @param headerActions 标题栏右侧的附加操作区
+ * @param headerActions extra actions on the right of the title bar
  */
 @Composable
 fun DefaultToolPreview(

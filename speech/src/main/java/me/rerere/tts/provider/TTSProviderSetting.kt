@@ -164,7 +164,7 @@ sealed class TTSProviderSetting {
 
     @Serializable
     @SerialName("mimo")
-    // 默认值仅用于快捷起步 可在设置页任意修改
+    // The defaults are only for a quick start and can be changed freely in settings
     data class MiMo(
         override var id: Uuid = Uuid.random(),
         override var name: String = "MiMo TTS",
@@ -208,19 +208,19 @@ sealed class TTSProviderSetting {
     }
 
     /**
-     * 阶跃星辰 Step TTS (step-tts-mini / step-tts-vivid / stepaudio-2.5-tts)。
+     * StepFun Step TTS (step-tts-mini / step-tts-vivid / stepaudio-2.5-tts).
      *
-     * 与 Step ASR 共用同一个 baseUrl 与鉴权方式 (Authorization: Bearer sk-xxx),
-     * 走 OpenAI 兼容的 [POST /v1/audio/speech] 非流式接口, 服务端一次性返回完整音频
-     * 二进制 (默认 mp3, 也可选 wav/pcm/opus/flac)。客户端把整段音频包成一个 AudioChunk
-     * 发出, 由 TtsSynthesizer 统一收集后交给播放器。
+     * Shares the same baseUrl and authentication as Step ASR (Authorization: Bearer sk-xxx),
+     * using the OpenAI-compatible non-streaming [POST /v1/audio/speech] endpoint; the server returns the complete audio
+     * binary at once (mp3 by default, optionally wav/pcm/opus/flac). The client wraps the whole audio into one AudioChunk
+     * and emits it; TtsSynthesizer collects it and hands it to the player.
      *
-     * 仅 stepaudio-2.5-tts 模型支持 [instruction] 字段 (全局语境, ≤200 字符), 其它模型
-     * (step-tts-mini / step-tts-vivid / step-tts-2) 会忽略该字段, 留空时不下发。
+     * Only the stepaudio-2.5-tts model supports the [instruction] field (global context, ≤200 characters); other models
+     * (step-tts-mini / step-tts-vivid / step-tts-2) ignore it, and it isn't sent when empty.
      *
-     * 官方文档:
-     * - 模型总览: https://platform.stepfun.com/docs/zh/guides/models/stepaudio-2.5-tts
-     * - 开发指南: https://platform.stepfun.com/docs/zh/guides/developer/tts
+     * Official docs:
+     * - Model overview: https://platform.stepfun.com/docs/guides/models/stepaudio-2.5-tts
+     * - Developer guide: https://platform.stepfun.com/docs/guides/developer/tts
      */
     @Serializable
     @SerialName("step")
@@ -231,17 +231,17 @@ sealed class TTSProviderSetting {
         val baseUrl: String = "https://api.stepfun.com",
         // step-tts-mini | step-tts-vivid | stepaudio-2.5-tts | step-tts-2
         val model: String = "step-tts-mini",
-        // 完整 voice-id 列表见开发指南; 默认值与官方 SDK 一致
+        // See the developer guide for the full voice-id list; the default matches the official SDK
         val voice: String = "elegantgentle-female",
-        // mp3 | wav | pcm | opus | flac; 注意 StepFun API 使用 camelCase 字段名
+        // mp3 | wav | pcm | opus | flac; note that the StepFun API uses camelCase field names
         val responseFormat: String = "mp3",
-        // 0.5 - 2.0, 1.0 为正常语速
+        // 0.5 - 2.0, 1.0 is normal speed
         val speed: Float = 1.0f,
-        // 0.1 - 2.0, 1.0 为正常音量
+        // 0.1 - 2.0, 1.0 is normal volume
         val volume: Float = 1.0f,
         // 8000 | 16000 | 22050 | 24000
         val sampleRate: Int = 24000,
-        // 仅 stepaudio-2.5-tts 生效; ≤200 字符, 留空时不下发
+        // Only applies to stepaudio-2.5-tts; ≤200 characters, not sent when empty
         val instruction: String = "",
     ) : TTSProviderSetting() {
         override fun copyProvider(

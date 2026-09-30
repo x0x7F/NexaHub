@@ -14,9 +14,9 @@ import sh.calvin.reorderable.ReorderableListItemScope
 private const val DraggingScale = 0.95f
 
 /**
- * 统一的列表拖拽排序手势：长按整个 item 开始拖拽，带触感反馈和拖拽中的缩放效果。
+ * Shared drag-to-reorder gesture for lists: long-press the whole item to start dragging, with haptic feedback and a scale effect while dragging.
  *
- * 在 `ReorderableItem { isDragging -> }` 内使用，作为 item 的 modifier：
+ * Use it inside `ReorderableItem { isDragging -> }` as the item's modifier:
  * ```
  * ReorderableItem(state, key) { isDragging ->
  *     MyItem(modifier = longPressReorder(isDragging))
@@ -39,7 +39,7 @@ fun ReorderableCollectionItemScope.longPressReorder(
 }
 
 /**
- * [longPressReorder] 的 `ReorderableColumn` / `ReorderableRow` 版本。
+ * The `ReorderableColumn` / `ReorderableRow` version of [longPressReorder].
  */
 @Composable
 fun ReorderableListItemScope.longPressReorder(

@@ -97,7 +97,7 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
     onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)? = null,
     onToolAnswer: ((toolCallId: String, answer: String) -> Unit)? = null,
 ) {
-    // ask_user 是交互式问答流程, 不走注册式渲染框架
+    // ask_user is an interactive Q&A flow and doesn't use the registered renderer framework
     if (tool.toolName == ASK_USER_TOOL_NAME) {
         AskUserToolStep(tool = tool, loading = loading, onToolAnswer = onToolAnswer)
         return
@@ -128,7 +128,7 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
     val isDenied = tool.approvalState is ToolApprovalState.Denied
     val images = tool.output.filterIsInstance<UIMessagePart.Image>()
 
-    // 摘要由注册的渲染器决定; 图片输出与拒绝原因为所有工具通用
+    // The summary is decided by the registered renderer; image output and rejection reasons are common to all tools
     val hasExtraContent = renderer.hasSummary(context) || isDenied || images.isNotEmpty()
 
     ControlledChainOfThoughtStep(

@@ -9,10 +9,10 @@ import androidx.compose.ui.res.stringResource
 import me.rerere.rikkahub.R
 
 /**
- * 权限信息数据类
- * @param permission Android权限字符串 (如 android.permission.CAMERA)
- * @param usage 权限使用说明的Composable内容
- * @param required 是否为必需权限
+ * Permission info data class
+ * @param permission the Android permission string (e.g. android.permission.CAMERA)
+ * @param usage Composable content explaining how the permission is used
+ * @param required whether the permission is required
  */
 data class PermissionInfo(
     val permission: String,
@@ -22,21 +22,21 @@ data class PermissionInfo(
 )
 
 /**
- * 权限状态枚举
+ * Permission status enum
  */
 enum class PermissionStatus {
-    /** 未请求 */
+    /** Not requested */
     NotRequested,
-    /** 已授权 */
+    /** Granted */
     Granted,
-    /** 被拒绝但可以再次请求 */
+    /** Denied but can be requested again */
     Denied,
-    /** 被拒绝且用户选择"不再询问" */
+    /** Denied and the user chose "Don't ask again" */
     DeniedPermanently
 }
 
 /**
- * 权限请求结果
+ * Permission request result
  */
 data class PermissionResult(
     val permission: String,
@@ -45,7 +45,7 @@ data class PermissionResult(
 )
 
 /**
- * 多个权限的请求结果
+ * Request result for multiple permissions
  */
 data class MultiplePermissionResult(
     val results: Map<String, PermissionResult>,

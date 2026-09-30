@@ -33,15 +33,15 @@ keyword	pass
 	\n\n\n
 keyword	def
 	 
-title.function	计算
+title.function	calculé
 	(
-params	值, 倍数=
+params	valeur, facteur=
 number	2
 	):\n    
 string	"""Names may be written in any script."""
 	\n    
 keyword	return
-	 值 * 倍数\n\n\n
+	 valeur * facteur\n\n\n
 keyword	class
 	 
 title.class	Base
@@ -53,7 +53,7 @@ keyword	class
 title.class	Derived
 	(
 title.class.inherited	Base
-	):\n    标记 = 
+	):\n    marqueur =
 string	"ok"
 	\n\n\nPLAIN = 
 string	'single'

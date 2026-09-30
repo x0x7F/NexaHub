@@ -868,7 +868,7 @@ class PromptInjectionTransformerTest {
         val lorebookId = Uuid.random()
         val regexInjection = createRegexInjection(
             keywords = listOf("old keyword"),
-            scanDepth = 2, // 只扫描最近2条消息
+            scanDepth = 2, // Only scan the latest 2 messages
             content = "Should not appear"
         )
         val lorebook = createLorebook(
@@ -878,11 +878,11 @@ class PromptInjectionTransformerTest {
 
         val messages = listOf(
             UIMessage.system("System prompt"),
-            UIMessage.user("Message with old keyword"), // 第1条用户消息（超出扫描范围）
+            UIMessage.user("Message with old keyword"), // 1st user message (outside the scan range)
             UIMessage.assistant("Response 1"),
             UIMessage.user("Message 2"),
             UIMessage.assistant("Response 2"),
-            UIMessage.user("Latest message") // 最近的消息，不包含关键词
+            UIMessage.user("Latest message") // The latest message, without the keyword
         )
 
         val result = transformMessages(
@@ -892,8 +892,8 @@ class PromptInjectionTransformerTest {
             lorebooks = listOf(lorebook)
         )
 
-        // 关键词在第1条用户消息中，但 scanDepth=2 只扫描最后2条
-        // 所以不应该触发注入
+        // The keyword is in the 1st user message, but scanDepth=2 only scans the last 2
+        // so the injection must not be triggered
         assertEquals(6, result.size)
         val systemText = getMessageText(result[0])
         assertEquals("System prompt", systemText)
@@ -916,7 +916,7 @@ class PromptInjectionTransformerTest {
             UIMessage.system("System prompt"),
             UIMessage.user("Old message"),
             UIMessage.assistant("Response"),
-            UIMessage.user("This is the latest message") // 在扫描范围内
+            UIMessage.user("This is the latest message") // Within the scan range
         )
 
         val result = transformMessages(
@@ -935,12 +935,12 @@ class PromptInjectionTransformerTest {
         val lorebookId = Uuid.random()
         val shallowEntry = createRegexInjection(
             keywords = listOf("old keyword"),
-            scanDepth = 1, // 只扫描最后1条
+            scanDepth = 1, // Only scan the last 1
             content = "Shallow scan content"
         )
         val deepEntry = createRegexInjection(
             keywords = listOf("old keyword"),
-            scanDepth = 10, // 扫描最后10条
+            scanDepth = 10, // Scan the last 10
             content = "Deep scan content"
         )
         val lorebook = createLorebook(
@@ -950,7 +950,7 @@ class PromptInjectionTransformerTest {
 
         val messages = listOf(
             UIMessage.system("System prompt"),
-            UIMessage.user("Message with old keyword"), // 较早的消息
+            UIMessage.user("Message with old keyword"), // An older message
             UIMessage.assistant("Response 1"),
             UIMessage.user("Response 2"),
             UIMessage.assistant("Response 3"),
@@ -965,9 +965,9 @@ class PromptInjectionTransformerTest {
         )
 
         val systemText = getMessageText(result[0])
-        // shallowEntry (scanDepth=1) 不应触发，因为最后1条消息不含关键词
+        // shallowEntry (scanDepth=1) must not trigger, because the last message has no keyword
         assertTrue(!systemText.contains("Shallow scan content"))
-        // deepEntry (scanDepth=10) 应该触发，因为早期消息包含关键词
+        // deepEntry (scanDepth=10) must trigger, because an earlier message contains the keyword
         assertTrue(systemText.contains("Deep scan content"))
     }
 
@@ -1167,7 +1167,7 @@ class PromptInjectionTransformerTest {
             createAssistantWithUnexecutedTool("call_1", "tool")
         )
 
-        // 尝试在索引 2（USER 和 ASSISTANT(tool) 之间）插入，应该移到 USER 之前
+        // Trying to insert at index 2 (between USER and ASSISTANT(tool)) should move it before USER
         val safeIndex = findSafeInsertIndex(messages, 2)
         assertEquals(1, safeIndex)
     }
@@ -1180,7 +1180,7 @@ class PromptInjectionTransformerTest {
             UIMessage.assistant("Hi!")
         )
 
-        // ASSISTANT 没有 tool，直接插入不受限制
+        // ASSISTANT has no tool, so inserting directly isn't restricted
         val safeIndex = findSafeInsertIndex(messages, 2)
         assertEquals(2, safeIndex)
     }
@@ -1208,7 +1208,7 @@ class PromptInjectionTransformerTest {
             content = "Bottom injection"
         )
 
-        // 消息序列: SYSTEM -> USER -> ASSISTANT(tool)
+        // Message sequence: SYSTEM -> USER -> ASSISTANT(tool)
         val messages = listOf(
             UIMessage.system("System prompt"),
             UIMessage.user("Call a tool"),
@@ -1224,7 +1224,7 @@ class PromptInjectionTransformerTest {
 
         assertEquals(4, result.size)
 
-        // 注入应该在 USER 之前，而不是 USER 和 ASSISTANT(tool) 之间
+        // The injection should be before USER, not between USER and ASSISTANT(tool)
         val injectedIndex = result.indexOfFirst { getMessageText(it).contains("Bottom injection") }
         val originalUserIndex = result.indexOfFirst { getMessageText(it).contains("Call a tool") }
         val assistantWithToolIndex = result.indexOfFirst { it.getTools().isNotEmpty() }
@@ -1243,7 +1243,7 @@ class PromptInjectionTransformerTest {
             content = "Depth injection"
         )
 
-        // 消息序列: SYSTEM -> USER -> ASSISTANT(tool)
+        // Message sequence: SYSTEM -> USER -> ASSISTANT(tool)
         val messages = listOf(
             UIMessage.system("System prompt"),
             UIMessage.user("Call a tool"),
@@ -1276,7 +1276,7 @@ class PromptInjectionTransformerTest {
             content = "Bottom injection"
         )
 
-        // 消息序列: SYSTEM -> USER -> ASSISTANT(executed tool) -> ASSISTANT(final) -> USER
+        // Message sequence: SYSTEM -> USER -> ASSISTANT(executed tool) -> ASSISTANT(final) -> USER
         val messages = listOf(
             UIMessage.system("System prompt"),
             UIMessage.user("Call a tool"),
@@ -1294,7 +1294,7 @@ class PromptInjectionTransformerTest {
 
         assertEquals(6, result.size)
 
-        // 注入应该在最后一条用户消息之前
+        // The injection should be before the last user message
         val injectedIndex = result.indexOfFirst { getMessageText(it).contains("Bottom injection") }
         val lastUserIndex = result.indexOfLast { it.role == MessageRole.USER && getMessageText(it) == "Thanks!" }
         assertEquals(lastUserIndex - 1, injectedIndex)

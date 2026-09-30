@@ -42,7 +42,7 @@ data class ChartSpec(
     val yAxis: ChartAxis = ChartAxis(),
     val series: List<ChartSeries>,
 ) {
-    /** 类目数量（折线图/柱状图），取 x_axis.data 与最长系列的较大值 */
+    /** Number of categories (line/bar charts): the larger of x_axis.data and the longest series */
     val categoryCount: Int
         get() = maxOf(xAxis.data.size, series.maxOfOrNull { it.values.size } ?: 0)
 
@@ -50,7 +50,7 @@ data class ChartSpec(
 
     companion object {
         /**
-         * 从 chart_display 工具参数解析图表, 尽量宽松; 无法构成有效图表时返回 null
+         * Parse a chart from the chart_display tool arguments, as leniently as possible; returns null when no valid chart can be formed
          */
         fun fromJson(element: JsonElement): ChartSpec? {
             val obj = element as? JsonObject ?: return null

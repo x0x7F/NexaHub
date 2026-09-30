@@ -373,7 +373,7 @@ private fun McpServerItem(
                 if (status == McpStatus.NeedsAuthorization) {
                     val context = LocalContext.current
                     Text(
-                        text = "需要 OAuth 授权",
+                        text = "OAuth authorization required",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -381,19 +381,19 @@ private fun McpServerItem(
                         onClick = { mcpManager.startAuthorization(item, context) },
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     ) {
-                        Text("OAuth 授权")
+                        Text("Authorize with OAuth")
                     }
                 }
                 if (status == McpStatus.Authorizing) {
                     Text(
-                        text = "正在授权，请在浏览器中完成…",
+                        text = "Authorizing, please finish in your browser…",
                         style = MaterialTheme.typography.labelSmall,
                     )
                     TextButton(
                         onClick = { mcpManager.cancelAuthorization(item) },
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     ) {
-                        Text("取消授权")
+                        Text("Cancel authorization")
                     }
                 }
             }
@@ -525,7 +525,7 @@ private fun McpCommonOptionsConfigure(
             .imePadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // 启用/禁用开关
+        // Enable/disable toggle
         FormItem(
             label = {
                 Text(stringResource(R.string.setting_mcp_page_enable))
@@ -562,7 +562,7 @@ private fun McpCommonOptionsConfigure(
 
         HorizontalDivider()
 
-        // 名称输入框
+        // Name field
         FormItem(
             label = {
                 Text(stringResource(R.string.setting_mcp_page_name))
@@ -599,7 +599,7 @@ private fun McpCommonOptionsConfigure(
 
         HorizontalDivider()
 
-        // 传输类型选择
+        // Transport type selection
         FormItem(
             label = {
                 Text(stringResource(R.string.setting_mcp_page_transport_type))
@@ -659,7 +659,7 @@ private fun McpCommonOptionsConfigure(
 
         HorizontalDivider()
 
-        // 服务器地址配置
+        // Server address configuration
         FormItem(
             label = {
                 Text(stringResource(R.string.setting_mcp_page_server_url))
@@ -701,7 +701,7 @@ private fun McpCommonOptionsConfigure(
 
         HorizontalDivider()
 
-        // 请求头配置
+        // Header configuration
         FormItem(
             label = {
                 Text(stringResource(R.string.setting_mcp_page_custom_headers))
@@ -907,7 +907,7 @@ private fun McpToolCard(
                 .padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            // 第一行：工具名字和3个按钮
+            // First row: tool name and 3 buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -920,7 +920,7 @@ private fun McpToolCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // 需要审批开关
+                // Requires-approval toggle
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -935,13 +935,13 @@ private fun McpToolCard(
                         size = SwitchSize.Small
                     )
                 }
-                // 启用开关
+                // Enable toggle
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = "启用",
+                        text = "Enabled",
                         style = MaterialTheme.typography.labelSmall,
                     )
                     Switch(
@@ -950,7 +950,7 @@ private fun McpToolCard(
                         size = SwitchSize.Small
                     )
                 }
-                // 展开/收起按钮
+                // Expand/collapse button
                 IconButton(
                     onClick = { expanded = !expanded },
                     modifier = Modifier.size(32.dp)
@@ -962,9 +962,9 @@ private fun McpToolCard(
                     )
                 }
             }
-            // 展开后显示描述和参数
+            // Show the description and parameters when expanded
             if (expanded) {
-                // 描述
+                // Description
                 if (!tool.description.isNullOrBlank()) {
                     Text(
                         text = tool.description,
@@ -972,7 +972,7 @@ private fun McpToolCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                     )
                 }
-                // 参数标签
+                // Parameter tags
                 tool.inputSchema?.let { it as? InputSchema.Obj }?.let { schema ->
                     if (schema.properties.isNotEmpty()) {
                         FlowRow(

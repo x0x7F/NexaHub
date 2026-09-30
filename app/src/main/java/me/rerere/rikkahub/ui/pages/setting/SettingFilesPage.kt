@@ -80,7 +80,7 @@ fun SettingFilesPage(
     val toaster = LocalToaster.current
     val folders = remember { listOf(FileFolders.UPLOAD) }
 
-    // 预先获取字符串资源
+    // Fetch string resources up front
     val deletedToast = stringResource(R.string.setting_files_page_deleted_toast)
     val deleteFailedToast = stringResource(R.string.setting_files_page_delete_failed_toast)
     val cleanedToast = stringResource(R.string.setting_files_page_cleaned_toast)

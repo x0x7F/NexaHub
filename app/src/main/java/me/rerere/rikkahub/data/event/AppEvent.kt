@@ -7,7 +7,7 @@ sealed class AppEvent {
     data class Speak(val text: String) : AppEvent()
     data object OpenUsageAccessSettings : AppEvent()
 
-    /** 聊天生成过程中的流式更新，由 ChatNotificationManager 消费用于 Live Update 通知。 */
+    /** Streaming updates during chat generation, consumed by ChatNotificationManager for Live Update notifications. */
     data class ChatGenerationUpdate(
         val conversationId: Uuid,
         val lastMessage: UIMessage,
@@ -15,8 +15,8 @@ sealed class AppEvent {
     ) : AppEvent()
 
     /**
-     * 聊天生成结束（完成、失败或取消）。
-     * [contentPreview] 为 null 时仅取消 Live Update 通知，不发送完成通知。
+     * Chat generation ended (finished, failed or cancelled).
+     * When [contentPreview] is null, only the Live Update notification is cancelled and no completion notification is sent.
      */
     data class ChatGenerationEnded(
         val conversationId: Uuid,

@@ -20,26 +20,26 @@ import java.util.concurrent.TimeUnit
 
 private const val TAG = "StepTTSProvider"
 
-// StepFun /v1/audio/speech 返回的二进制格式按 responseFormat 决定
+// The binary format returned by StepFun /v1/audio/speech is determined by responseFormat
 private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 
 /**
- * 阶跃星辰 Step TTS 适配器。
+ * StepFun Step TTS adapter.
  *
- * 走 [POST {baseUrl}/v1/audio/speech] 非流式接口, 一次性 POST 文本, 服务端返回完整音频
- * 二进制 (mp3/wav/pcm/opus/flac)。鉴权用标准 `Authorization: Bearer sk-xxx`。
+ * Uses the non-streaming [POST {baseUrl}/v1/audio/speech] endpoint: POST the text once, and the server returns the complete audio
+ * binary (mp3/wav/pcm/opus/flac). Authentication uses the standard `Authorization: Bearer sk-xxx`.
  *
- * 字段命名遵循阶跃官方 Android SDK (TtsSpeechRequest) 的 camelCase 约定:
- * responseFormat / sampleRate / voiceLabel 等, 与 OpenAI 的 snake_case 不同, 切换 baseUrl
- * 到 OpenAI 兼容代理时需要注意。
+ * Field names follow the camelCase convention of StepFun's official Android SDK (TtsSpeechRequest):
+ * responseFormat / sampleRate / voiceLabel, etc., unlike OpenAI's snake_case; keep this in mind when pointing baseUrl
+ * at an OpenAI-compatible proxy.
  *
- * 官方文档:
- * - 模型总览: https://platform.stepfun.com/docs/zh/guides/models/stepaudio-2.5-tts
- * - 开发指南: https://platform.stepfun.com/docs/zh/guides/developer/tts
+ * Official docs:
+ * - Model overview: https://platform.stepfun.com/docs/guides/models/stepaudio-2.5-tts
+ * - Developer guide: https://platform.stepfun.com/docs/guides/developer/tts
  */
 class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
     private val httpClient = OkHttpClient.Builder()
-        // 一次性合成可能比较慢 (长文本 + 高质量模型), 给足读超时
+        // One-shot synthesis can be slow (long text + high-quality model), so allow a generous read timeout
         .readTimeout(120, TimeUnit.SECONDS)
         .build()
 
@@ -48,8 +48,8 @@ class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
         providerSetting: TTSProviderSetting.Step,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
-        // 只在 instruction 非空时下发; step-tts-mini / step-tts-vivid 不支持该字段,
-        // 但服务端会忽略未知字段 (responseFormat 也允许 ignoreUnknownKeys)
+        // Only sent when instruction isn't empty; step-tts-mini / step-tts-vivid don't support the field,
+        // but the server ignores unknown fields (responseFormat also allows ignoreUnknownKeys)
         val requestBody = buildJsonObject {
             put("model", providerSetting.model)
             put("input", request.text)
@@ -75,7 +75,7 @@ class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
 
         val response = httpClient.newCall(httpRequest).execute()
         if (!response.isSuccessful) {
-            // 把错误响应体读出来方便排查 (4xx 通常返回 JSON 错误信息)
+            // Read the error response body to help debugging (4xx usually returns a JSON error)
             val errorBody = runCatching { response.body?.string() }.getOrNull().orEmpty()
             throw TTSProviderException(
                 message = "Step TTS request failed: HTTP ${response.code} ${response.message}. body=$errorBody",
@@ -90,7 +90,7 @@ class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
             throw Exception("Step TTS returned 0 bytes")
         }
 
-        // StepFun 端的 format 字符串与 AudioFormat 枚举对齐
+        // StepFun's format strings line up with the AudioFormat enum
         val audioFormat = when (providerSetting.responseFormat.lowercase()) {
             "mp3" -> AudioFormat.MP3
             "wav" -> AudioFormat.WAV

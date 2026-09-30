@@ -332,7 +332,7 @@ class FilesManager(
             emptyList()
         }
 
-        // 磁盘 -> 数据库：补录尚未登记的文件
+        // Disk -> database: register files that aren't recorded yet
         var inserted = 0
         val diskRelativePaths = HashSet<String>()
         diskFiles.forEach { file ->
@@ -358,7 +358,7 @@ class FilesManager(
             }
         }
 
-        // 数据库 -> 磁盘：清理文件已不存在的孤儿记录
+        // Database -> disk: clean up orphan records whose files no longer exist
         var removed = 0
         repository.listByFolder(folder).first().forEach { entity ->
             if (entity.relativePath !in diskRelativePaths && !getFile(entity).isFile) {

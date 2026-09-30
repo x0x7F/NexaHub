@@ -27,7 +27,7 @@ class ConversationSession(
     private val onIdle: (Uuid) -> Unit,
     private val onGenerationFinished: (Uuid, Throwable?) -> Unit = { _, _ -> },
 ) {
-    // 会话状态
+    // Conversation state
     private val _state = MutableStateFlow(initial)
     val state: StateFlow<Conversation> = _state.asStateFlow()
     private val initializationMutex = Mutex()
@@ -36,13 +36,13 @@ class ConversationSession(
     private var initialized = false
     val messageQueue = MessageQueue()
 
-    // 页面切换和 SSE 重连只加载一次；活跃 session 的内存状态始终优先。
+    // Page switches and SSE reconnects only load once; the active session's in-memory state always takes precedence.
     suspend fun initialize(load: suspend () -> Conversation) {
         initializationMutex.withLock {
             if (initialized) return
             val conversation = load()
             synchronized(this) {
-                // 加载挂起期间可能已经通过保存或编辑写入了更新的状态。
+                // A newer state may have been written via save or edit while loading was suspended.
                 if (!initialized) updateConversation(conversation)
             }
         }
@@ -55,7 +55,7 @@ class ConversationSession(
         initialized = true
     }
 
-    // 元数据先应用到最新内存状态；落库只更新对应列，不能用旧消息快照覆盖流式输出。
+    // Metadata is applied to the latest in-memory state first; persisting only updates the matching columns and must not overwrite streamed output with an old message snapshot.
     internal suspend fun updateMetadata(
         update: (Conversation) -> Conversation,
         persist: suspend (Conversation) -> Unit,
@@ -68,7 +68,7 @@ class ConversationSession(
         }
     }
 
-    // 失败和取消也必须保存已收到的内容，且保存完成前不能释放生成任务。
+    // Failures and cancellations must also save the content received, and the generation job must not be released until saving finishes.
     suspend fun finishGeneration(save: suspend (Conversation) -> Unit): Conversation =
         withContext(NonCancellable) {
             val current = state.value
@@ -83,18 +83,18 @@ class ConversationSession(
             conversation
         }
 
-    // 从队列取出到写入会话历史之间，附件仍需作为有效引用保留。
+    // Between leaving the queue and being written to the conversation history, attachments must still be kept as live references.
     @Volatile
     var submittingMessage: QueuedMessage? = null
         internal set
 
-    // 原子引用计数
+    // Atomic reference count
     private val refCount = AtomicInteger(0)
 
-    // 处理状态（如 OCR 识别中）
+    // Processing status (e.g. OCR in progress)
     val processingStatus = MutableStateFlow<String?>(null)
 
-    // 生成任务（内聚在 session 中）
+    // Generation job (owned by the session)
     private val _generationJob = MutableStateFlow<Job?>(null)
     private val activeJobs = mutableSetOf<Job>()
     val generationJob: StateFlow<Job?> = _generationJob.asStateFlow()
@@ -103,7 +103,7 @@ class ConversationSession(
         get() = refCount.get() > 0 || _generationJob.value != null ||
                 messageQueue.state.value.messages.isNotEmpty()
 
-    // 空闲检查任务
+    // Idle check job
     private var idleCheckJob: Job? = null
 
     internal fun acquire(): Int = refCount.incrementAndGet().also {

@@ -29,7 +29,7 @@ import me.rerere.rikkahub.utils.toFixed
 import java.time.Duration
 
 /**
- * 显示消息的技术统计信息（如 token 使用量）
+ * Shows technical statistics for a message (such as token usage)
  */
 @Composable
 fun ChatMessageNerdLine(

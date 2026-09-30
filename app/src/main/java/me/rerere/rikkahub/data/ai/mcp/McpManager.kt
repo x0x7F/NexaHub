@@ -34,10 +34,10 @@ import kotlin.io.encoding.Base64
 import kotlin.uuid.Uuid
 
 /**
- * MCP 子系统的公共入口。
+ * Public entry point of the MCP subsystem.
  *
- * 这里仅协调配置、OAuth、连接注册表与 UI 内容转换；单个服务器的连接状态机由
- * [McpSessionRegistry] 管理，OAuth 协议细节由 [McpOAuthCoordinator] 管理。
+ * This only coordinates configuration, OAuth, the connection registry and UI content conversion; each server's connection state machine is
+ * managed by [McpSessionRegistry], and OAuth protocol details by [McpOAuthCoordinator].
  */
 class McpManager(
     private val settingsStore: SettingsStore,

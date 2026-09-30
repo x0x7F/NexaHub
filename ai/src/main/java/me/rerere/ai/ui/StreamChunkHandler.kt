@@ -13,58 +13,58 @@ import me.rerere.ai.util.json
 import kotlin.time.Clock
 
 /**
- * 将 Provider 产生的通用流事件合并为一条 [UIMessage]。
+ * Merges the generic stream events produced by a Provider into a single [UIMessage].
  *
- * 文本、推理和图片可能交错到达，因此不能只更新最后一个 part。本类会在收到对应的 `Start`
- * 事件时，记录事件 id 在 [UIMessage.parts] 中的位置；后续 `Delta`、`Snapshot` 和 `End`
- * 事件再通过同一 id 定位并更新该 part。工具调用则直接使用
- * [UIMessagePart.Tool.toolCallId] 定位。
+ * Text, reasoning and images may arrive interleaved, so updating only the last part is not enough. When this class receives
+ * a `Start` event, it records the position of the event id in [UIMessage.parts]; later `Delta`, `Snapshot` and `End`
+ * events use the same id to locate and update that part. Tool calls are located directly by
+ * [UIMessagePart.Tool.toolCallId].
  *
- * [handle] 不会修改传入的消息列表，而是返回包含更新后消息的新列表。如果列表末尾不是助手
- * 消息，第一个事件会自动创建一条空的助手消息。收到 [StreamChunk.Finish] 后，会标记消息完成
- * 并清除内部状态。
+ * [handle] never modifies the passed-in message list; it returns a new list with the updated message. If the list doesn't
+ * end with an assistant message, the first event creates an empty assistant message. On [StreamChunk.Finish], the message
+ * is marked finished and the internal state is cleared.
  *
- * ## 工作过程
+ * ## How it works
  *
- * 1. 接收一个 [StreamChunk]，检查消息列表非空。
- * 2. 如果列表末尾不是助手消息，创建一条带有当前 [model] id 的空助手消息。
- * 3. 根据事件类型更新助手消息：
- *    - `TextStart/Delta/End`：创建、追加并结束文本 part。
- *    - `ReasoningStart/Delta/End`：创建、追加并标记推理 part 的完成时间。
- *    - `ToolCallStart/Delta/End`：按调用 id 创建工具 part，并逐步拼接工具名和输入参数。
- *    - `ServerToolStart/InputDelta/InputEnd/End`：追踪服务端工具的 JSON 输入、结果和状态。
- *    - `ImageStart/Delta/End`：创建图片 part，并逐步追加 Base64 数据。
- *    - `ImageSnapshot`：用最新的完整 Base64 快照替换同 id 图片的旧数据。
- *    - `Annotations`：追加并去重消息注解。
- *    - `Usage`：将本次用量合并到消息已有的 Token 用量中。
- *    - `Finish`：设置消息完成时间，结束尚未关闭的推理 part，并清空事件索引。
- * 4. 使用 [UIMessage.copy] 生成更新后的助手消息，将其替换到列表末尾并返回新列表。
+ * 1. Receive a [StreamChunk] and check that the message list is not empty.
+ * 2. If the list doesn't end with an assistant message, create an empty assistant message with the current [model] id.
+ * 3. Update the assistant message based on the event type:
+ *    - `TextStart/Delta/End`: create, append to and finish a text part.
+ *    - `ReasoningStart/Delta/End`: create, append to and mark the finish time of a reasoning part.
+ *    - `ToolCallStart/Delta/End`: create a tool part by call id and incrementally build the tool name and input.
+ *    - `ServerToolStart/InputDelta/InputEnd/End`: track a server tool's JSON input, result and status.
+ *    - `ImageStart/Delta/End`: create an image part and incrementally append Base64 data.
+ *    - `ImageSnapshot`: replace the old data of the image with the same id with the latest full Base64 snapshot.
+ *    - `Annotations`: append and deduplicate message annotations.
+ *    - `Usage`: merge this usage into the message's existing token usage.
+ *    - `Finish`: set the message finish time, finish any open reasoning parts, and clear the event index.
+ * 4. Build the updated assistant message with [UIMessage.copy], replace the end of the list with it and return the new list.
  *
- * 一段文本流的典型调用顺序如下：
+ * A typical call sequence for a text stream:
  *
  * ```
  * TextStart(id) -> TextDelta(id, ...) -> TextDelta(id, ...) -> TextEnd(id) -> Finish
  * ```
  *
- * [StreamChunk.Finish] 只代表响应流正常结束，并不保证一定到达。网络错误、协议解析失败或上层取消
- * Flow 时，流可能直接异常结束。此时已经合并的内容仍然保留，但消息的 `finishedAt` 可能为空，尚未
- * 收到 `ReasoningEnd` 的推理 part 也不会由本类自动结束。调用方应在 Flow 的完成或异常处理中执行
- * 必要的 UI 收尾，并丢弃当前 handler；不要将它复用于下一条响应流。
+ * [StreamChunk.Finish] only means the response stream ended normally and is not guaranteed to arrive. On network errors,
+ * protocol parse failures or when the caller cancels the Flow, the stream may end with an exception. Content merged so far
+ * is kept, but the message's `finishedAt` may be null, and reasoning parts that never got `ReasoningEnd` are not finished
+ * by this class. Callers should do any needed UI cleanup in the Flow's completion or error handling and discard this handler; don't reuse it for the next response stream.
  *
- * 该类保存着一次响应流的合并状态，不是无状态转换器。每条并发响应流都必须使用独立实例，且
- * 事件应按 Provider 产生的顺序交给同一实例处理。
+ * This class holds the merge state of one response stream; it is not a stateless transformer. Every concurrent response
+ * stream must use its own instance, and events must be fed to the same instance in the order the Provider produced them.
  */
 class StreamChunkHandler(private val model: Model? = null) {
-    // Map 的值是对应 part 在当前助手消息 parts 列表中的下标。
+    // The map value is the index of the corresponding part in the current assistant message's parts list.
     private val textPartIndexes = mutableMapOf<String, Int>()
     private val reasoningPartIndexes = mutableMapOf<String, Int>()
     private val imagePartIndexes = mutableMapOf<String, Int>()
     private val serverToolInputBuffers = mutableMapOf<String, StringBuilder>()
 
     /**
-     * 将一个 [chunk] 合并进消息列表末尾的助手消息，并返回新的消息列表。
+     * Merge a [chunk] into the assistant message at the end of the message list and return the new message list.
      *
-     * @throws IllegalArgumentException 当 [messages] 为空时抛出
+     * @throws IllegalArgumentException if [messages] is empty
      */
     fun handle(messages: List<UIMessage>, chunk: StreamChunk): List<UIMessage> {
         require(messages.isNotEmpty()) { "messages must not be empty" }
@@ -88,7 +88,7 @@ class StreamChunkHandler(private val model: Model? = null) {
             }
             is StreamChunk.TextDelta -> {
                 val index = textPartIndexes[chunk.id]
-                // 容忍 Provider 未发送 Start：首次收到 Delta 时直接创建对应 part。
+                // Tolerate providers that don't send Start: create the part on the first Delta.
                 if (index == null || parts.getOrNull(index) !is UIMessagePart.Text) {
                     copy(parts = parts + UIMessagePart.Text(chunk.text, chunk.metadata)).also {
                         textPartIndexes[chunk.id] = parts.size
@@ -163,7 +163,7 @@ class StreamChunkHandler(private val model: Model? = null) {
             }
 
             is StreamChunk.ToolCallDelta -> copy(parts = parts.map { part ->
-                // 工具调用可以并行生成，通过 toolCallId 而不是 part 位置识别目标。
+                // Tool calls may be generated in parallel, so the target is identified by toolCallId, not by part position.
                 if (part is UIMessagePart.Tool && part.toolCallId == chunk.id) {
                     part.copy(
                         toolName = part.toolName + chunk.toolNameDelta,
@@ -275,8 +275,8 @@ class StreamChunkHandler(private val model: Model? = null) {
                 } else {
                     copy(parts = parts.toMutableList().apply {
                         val image = get(index) as UIMessagePart.Image
-                        // Snapshot 是一张完整的可渲染图片，只替换 data URL 的数据部分；
-                        // 与 ImageDelta 不同，它不会把数据追加到上一帧之后。
+                        // A Snapshot is a complete renderable image; only the data portion of the data URL is replaced;
+                        // unlike ImageDelta, it is not appended after the previous frame.
                         val dataUrlPrefix = image.url.substringBefore(",").takeIf { it.startsWith("data:") }
                             ?: "data:image/png;base64"
                         set(index, image.copy(
@@ -293,7 +293,7 @@ class StreamChunkHandler(private val model: Model? = null) {
             is StreamChunk.Finish -> copy(
                 finishedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             ).finishReasoning().also {
-                // Finish 同时结束尚未显式结束的 reasoning，并释放本次响应流的索引状态。
+                // Finish also ends any reasoning not explicitly ended and releases this stream's index state.
                 textPartIndexes.clear()
                 reasoningPartIndexes.clear()
                 imagePartIndexes.clear()
@@ -357,8 +357,8 @@ private fun UIMessage.appendMessage(delta: UIMessage): UIMessage {
                 }
             }
 
-            // 非流式解析已经产出完整可渲染的 URL(data URI 或 http)，
-            // 这里每张图片都是独立的完整图片，不能拼接 URL 或补 data 前缀。
+            // Non-streaming parsing already produced a complete renderable URL (data URI or http);
+            // each image here is a standalone complete image, so URLs must not be concatenated or given a data prefix.
             is UIMessagePart.Image -> acc + deltaPart
 
             is UIMessagePart.Reasoning -> {

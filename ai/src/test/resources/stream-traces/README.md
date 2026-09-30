@@ -1,23 +1,23 @@
 # Stream trace fixtures
 
-每个目录包含两个文件：
+Each directory contains two files:
 
-- `events.jsonl`：每行一个序列化后的 `SseEvent`，记录在 HTTP 客户端完成 SSE 分帧之后、Provider
-  解码之前。不要记录 Authorization 等请求头。
-- `expected.json`：`StreamChunkDecoder` 与 `StreamChunkHandler` 处理完成后的稳定语义快照。
-  时间戳、随机消息 ID 等易变字段不进入快照。
+- `events.jsonl`: one serialized `SseEvent` per line, recorded after the HTTP client has done SSE framing and before the Provider
+  decodes it. Don't record request headers such as Authorization.
+- `expected.json`: a stable semantic snapshot after `StreamChunkDecoder` and `StreamChunkHandler` have processed the events.
+  Volatile fields such as timestamps and random message IDs are not included in the snapshot.
 
-新增或更新轨迹时，应保留 Provider 返回的 `id`、`event` 和 `data`，首次提交前人工审阅
-`expected.json`。常规单元测试只离线回放这些文件，不访问网络。
+When adding or updating a trace, keep the `id`, `event` and `data` returned by the Provider, and manually review
+`expected.json` before the first commit. Regular unit tests only replay these files offline and never touch the network.
 
-录制新轨迹后，可在 `ai` 模块目录运行以下命令重新生成语义快照：
+After recording a new trace, regenerate the semantic snapshot by running this command in the `ai` module directory:
 
 ```bash
 UPDATE_STREAM_TRACE_SNAPSHOTS=true ../gradlew testDebugUnitTest \
   --tests me.rerere.ai.provider.stream.StreamTraceReplayTest
 ```
 
-快照会保留工具调用 ID、完整 metadata、思考文本、工具名称与参数及 token usage。图片数据保留在
-`events.jsonl`，快照只记录 MIME 类型、解码后的字节数和 SHA-256，避免重复存储大段 Base64。
-Gemini 图像轨迹还会逐字比较 Provider 原始签名与解码后 metadata，验证签名在流式转换过程中
-未被修改。
+Snapshots keep tool call IDs, full metadata, thinking text, tool names and arguments, and token usage. Image data stays in
+`events.jsonl`; the snapshot only records the MIME type, decoded byte count and SHA-256, to avoid storing large Base64 blobs twice.
+Gemini image traces also compare the Provider's raw signature with the decoded metadata byte by byte, verifying the signature
+isn't modified during stream conversion.

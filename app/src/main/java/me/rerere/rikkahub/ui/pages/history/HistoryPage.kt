@@ -115,7 +115,7 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
                     },
                     onDelete = {
                         scope.launch {
-                            // 先获取完整的对话数据（包含 messageNodes），用于撤销恢复
+                            // First fetch the full conversation data (including messageNodes), used for undo
                             val fullConversation = vm.getFullConversation(conversation.id) ?: conversation
                             vm.deleteConversation(conversation)
                             val result = snackbarHostState.showSnackbar(

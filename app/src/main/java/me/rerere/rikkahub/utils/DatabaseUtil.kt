@@ -16,7 +16,7 @@ object DatabaseUtil {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        // 已fork io.requery.android.database 修改了window size，避免无法反射修改final字段
+        // io.requery.android.database was forked to change the window size, since final fields can't be modified via reflection
 //        try {
 //            val field =
 //                io.requery.android.database.CursorWindow::class.java.getDeclaredField("sDefaultCursorWindowSize")

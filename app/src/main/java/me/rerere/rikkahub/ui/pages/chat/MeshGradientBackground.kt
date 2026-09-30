@@ -23,14 +23,14 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Gemini 风格动态渐变背景。
+ * Gemini-style animated gradient background.
  *
- * 原理:
- *  1. 底层一个线性渐变(顶部偏蓝、底部偏白)。
- *  2. 上面叠几个 radialGradient 光斑(中心有色 → 边缘透明),天生就是柔的。
- *  3. 每个光斑用一个独立周期的无限动画,沿正弦/余弦轨迹缓慢漂移。
+ * How it works:
+ *  1. A linear gradient at the bottom layer (bluish at the top, whitish at the bottom).
+ *  2. A few radialGradient light spots on top (colored center → transparent edges), which are naturally soft.
+ *  3. Each spot uses an infinite animation with its own period, drifting slowly along a sine/cosine path.
  *
- * 不依赖 Modifier.blur,全 API 级别可用,性能也更好。
+ * Doesn't rely on Modifier.blur, so it works on all API levels and performs better.
  */
 @Composable
 fun MeshGradientBackground(
@@ -39,8 +39,8 @@ fun MeshGradientBackground(
 ) {
     val transition = rememberInfiniteTransition(label = "aurora")
 
-    // 每个光斑一个相位(0..2π),不同时长 → 错落漂移,避免整齐划一
-    // 增加 loops 参数，按需放大目标值和总动画时长
+    // One phase (0..2π) per spot, with different durations → staggered drift, avoiding uniform motion
+    // The loops parameter scales up the target value and total animation duration as needed
     @Composable
     fun phase(durationMillis: Int, loops: Int, label: String) = transition.animateFloat(
         initialValue = 0f,
@@ -48,15 +48,15 @@ fun MeshGradientBackground(
         animationSpec = infiniteRepeatable(tween(durationMillis * loops, easing = LinearEasing)),
         label = label,
     )
-    // 针对各自身上的乘数，传入消除小数所需的最小公倍数圈数
-    val p1 by phase(5_500, loops = 20, "p1") // 1.15 对应 20 圈 (总长 110秒)
-    val p2 by phase(7_000, loops = 1,  "p2") // 1.0  对应 1 圈
-    val p3 by phase(8_500, loops = 10, "p3") // 0.9  对应 10 圈 (总长 85秒)
-    val p4 by phase(6_200, loops = 10, "p4") // 1.1  对应 10 圈 (总长 62秒)
+    // For each spot's own multiplier, pass the least common multiple of loops needed to eliminate the fraction
+    val p1 by phase(5_500, loops = 20, "p1") // 1.15 needs 20 loops (110s total)
+    val p2 by phase(7_000, loops = 1,  "p2") // 1.0 needs 1 loop
+    val p3 by phase(8_500, loops = 10, "p3") // 0.9 needs 10 loops (85s total)
+    val p4 by phase(6_200, loops = 10, "p4") // 1.1 needs 10 loops (62s total)
 
     val dark = LocalDarkMode.current
     val baseGradient = if (dark) {
-        // 暗色:顶部深蓝,向下渐隐到接近纯黑
+        // Dark: deep blue at the top, fading downward to near black
         arrayOf(
             0.0f to Color(0xFF1B2A45),
             0.22f to Color(0xFF15223A),
@@ -65,7 +65,7 @@ fun MeshGradientBackground(
             1.0f to Color(0xFF080B12),
         )
     } else {
-        // 亮色:顶部偏蓝,向下渐隐到白
+        // Light: bluish at the top, fading downward to white
         arrayOf(
             0.0f to Color(0xFFAFD0F2),
             0.22f to Color(0xFFCBE0F6),
@@ -75,7 +75,7 @@ fun MeshGradientBackground(
         )
     }
 
-    // 光斑配色(蓝 / 青 / 淡蓝 / 暖色)及浓度,亮暗各一套
+    // Spot colors (blue / cyan / light blue / warm) and intensity, one set each for light and dark
     val blobBlue = if (dark) Color(0xFF3E6FB0) else Color(0xFF9EC5F0)
     val blobTeal = if (dark) Color(0xFF2E7D74) else Color(0xFFA8E6E0)
     val blobLightBlue = if (dark) Color(0xFF4A6E96) else Color(0xFFB6D7F2)
@@ -93,11 +93,11 @@ fun MeshGradientBackground(
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
-            // 光斑半径取屏幕较长边的比例,够大才柔
+            // Spot radius is a fraction of the screen's longer side; it has to be large enough to look soft
             val r = maxOf(w, h)
 
-            // 光斑全部聚在顶部,向下渐隐,保留下半屏留白
-            // 顶部蓝(主色,横向缓慢漂移)
+            // All spots gather at the top and fade downward, leaving the lower half of the screen blank
+            // Blue at the top (primary color, drifting slowly sideways)
             drawBlob(
                 center = Offset(
                     w * 0.48f + sin(p1) * w * 0.38f,
@@ -107,7 +107,7 @@ fun MeshGradientBackground(
                 color = blobBlue,
                 centerAlpha = alphaBlue,
             )
-            // 左上青绿点缀
+            // Teal accent at the top left
             drawBlob(
                 center = Offset(
                     w * 0.18f + sin(p2 + PI.toFloat() * 0.55f) * w * 0.30f,
@@ -117,7 +117,7 @@ fun MeshGradientBackground(
                 color = blobTeal,
                 centerAlpha = alphaTeal,
             )
-            // 右上淡蓝
+            // Light blue at the top right
             drawBlob(
                 center = Offset(
                     w * 0.82f + sin(p3 + PI.toFloat() * 0.9f) * w * -0.34f,
@@ -127,7 +127,7 @@ fun MeshGradientBackground(
                 color = blobLightBlue,
                 centerAlpha = alphaLightBlue,
             )
-            // 暖色光斑给运动提供更明显的色彩参照
+            // A warm spot gives the motion a more visible color reference
             drawBlob(
                 center = Offset(
                     w * 0.58f + sin(p4 + PI.toFloat() * 1.25f) * w * 0.28f,
@@ -143,7 +143,7 @@ fun MeshGradientBackground(
     }
 }
 
-/** 画一个柔光斑:中心有色,向外渐隐到透明。 */
+/** Draw a soft light spot: colored center fading outward to transparent. */
 private fun DrawScope.drawBlob(
     center: Offset,
     radius: Float,

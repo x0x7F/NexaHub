@@ -18,19 +18,19 @@ import org.koin.core.context.GlobalContext
 import java.io.File
 
 /**
- * 通过 Storage Access Framework 将 workspace 的 files 目录暴露给系统文件管理器。
+ * Exposes the workspace files directory to the system file manager via the Storage Access Framework.
  *
- * 目录结构：
+ * Directory structure:
  * ```
  * <root>
- * └── {workspace name}        <- 每个 workspace（虚拟目录，对应 files/ 目录）
- *     └── ...                 <- files/ 目录下的实际文件
+ * └── {workspace name}        <- one per workspace (virtual directory mapping to files/)
+ *     └── ...                 <- the actual files under files/
  * ```
  *
- * documentId 设计：
- * - 顶层根：[ROOT_DOC_ID]
- * - workspace 根目录：`ws/{root}`（root 为 workspace 在磁盘上的目录名，即 UUID）
- * - workspace 内文件：`ws/{root}/{相对 files/ 的路径}`
+ * documentId scheme:
+ * - Top-level root: [ROOT_DOC_ID]
+ * - Workspace root: `ws/{root}` (root is the workspace's directory name on disk, i.e. its UUID)
+ * - Files inside a workspace: `ws/{root}/{path relative to files/}`
  */
 class WorkspaceDocumentsProvider : DocumentsProvider() {
 
@@ -91,7 +91,7 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
         val cursor = MatrixCursor(projection ?: DEFAULT_DOCUMENT_PROJECTION)
         val parent = parseDocId(parentDocumentId)
         if (parent.isRoot) {
-            // 顶层：列出所有 workspace
+            // Top level: list all workspaces
             for (ws in allWorkspaces()) {
                 val dir = manager().filesDir(ws.root).also { it.mkdirs() }
                 addFileRow(cursor, ws.root, dir)
@@ -169,7 +169,7 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
         val destDir = resolveFile(targetParent.root, targetParent.relPath)
         require(destDir.isDirectory) { "Target is not a directory" }
         val dest = uniqueChild(destDir, srcFile.name)
-        // 防止把目录复制到自身内部
+        // Prevent copying a directory into itself
         require(!dest.canonicalPath.startsWith(srcFile.canonicalPath + File.separator)) {
             "Cannot copy a directory into itself"
         }
@@ -191,12 +191,12 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
         val destDir = resolveFile(targetParent.root, targetParent.relPath)
         require(destDir.isDirectory) { "Target is not a directory" }
         val dest = uniqueChild(destDir, srcFile.name)
-        // 防止把目录移动到自身内部
+        // Prevent moving a directory into itself
         require(!dest.canonicalPath.startsWith(srcFile.canonicalPath + File.separator)) {
             "Cannot move a directory into itself"
         }
         if (!srcFile.renameTo(dest)) {
-            // 所有 workspace 都在应用私有目录下，renameTo 一般可行；失败则回退为复制+删除
+            // All workspaces live in the app's private directory, so renameTo usually works; on failure fall back to copy + delete
             require(srcFile.copyRecursively(dest)) { "Failed to move: $sourceDocumentId" }
             require(if (srcFile.isDirectory) srcFile.deleteRecursively() else srcFile.delete()) {
                 "Failed to remove source after move: $sourceDocumentId"
@@ -229,7 +229,7 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
         val relPath = relPathOf(root, file)
         val isDir = file.isDirectory
         val flags = when {
-            // workspace 根目录：仅允许在其内部创建文件，不能删除/重命名 workspace 本身
+            // Workspace root: only files may be created inside it; the workspace itself can't be deleted/renamed
             relPath.isEmpty() -> Document.FLAG_DIR_SUPPORTS_CREATE
             isDir -> Document.FLAG_DIR_SUPPORTS_CREATE or
                 Document.FLAG_SUPPORTS_DELETE or Document.FLAG_SUPPORTS_RENAME or
@@ -270,13 +270,13 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
         return candidate
     }
 
-    /** 将 workspace files 目录下的文件解析为相对路径（root 自身返回空串） */
+    /** Resolve a file under the workspace files directory to a relative path (the root itself returns an empty string) */
     private fun relPathOf(root: String, file: File): String {
         val base = manager().filesDir(root).canonicalFile
         return file.canonicalFile.relativeTo(base).path.replace(File.separatorChar, '/')
     }
 
-    /** 解析 documentId 指向的实际文件，并校验路径不逃逸 workspace files 目录 */
+    /** Resolve the actual file a documentId points to, checking the path doesn't escape the workspace files directory */
     private fun resolveFile(root: String, relPath: String): File {
         val base = manager().filesDir(root).canonicalFile
         base.mkdirs()

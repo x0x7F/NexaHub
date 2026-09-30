@@ -31,37 +31,37 @@ private const val MAX_SYNTHESIS_ATTEMPTS = 3
 private const val SYNTHESIS_RETRY_BASE_DELAY_MS = 500L
 
 /**
- * TTS 控制器（重构版）
- * - 负责文本分片、预取合成、排队播放与状态上报
- * - 对外 API 与原版兼容
+ * TTS controller (refactored)
+ * - Handles text chunking, prefetching synthesis, queued playback and status reporting
+ * - The public API is compatible with the original
  */
 class TtsController(
     context: Context,
     private val ttsManager: TTSManager
 ) {
-    // 协程作用域
+    // Coroutine scope
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    // 组件
+    // Components
     private val chunker = TextChunker(maxChunkLength = 160)
     private val synthesizer = TtsSynthesizer(ttsManager)
     private val audio = AudioPlayer(context)
 
-    // Provider & 作业
+    // Provider & jobs
     private var currentProvider: TTSProviderSetting? = null
     private var workerJob: Job? = null
     private var isPaused = false
 
-    // 队列与缓存（基于稳定 ID）
+    // Queue and cache (based on stable IDs)
     private val queue: java.util.concurrent.ConcurrentLinkedQueue<TtsChunk> = java.util.concurrent.ConcurrentLinkedQueue()
     private val allChunks: MutableList<TtsChunk> = mutableListOf()
     private val cache = java.util.concurrent.ConcurrentHashMap<UUID, kotlinx.coroutines.Deferred<TTSResponse>>()
 
-    // 行为参数
+    // Behavior parameters
     private val chunkDelayMs = 120L
     private val prefetchCount = 2
 
-    // 状态流（保留与旧版兼容的 StateFlow）
+    // State flow (keeps the StateFlow compatible with the old version)
     private val _isAvailable = MutableStateFlow(false)
     val isAvailable: StateFlow<Boolean> = _isAvailable.asStateFlow()
 
@@ -77,12 +77,12 @@ class TtsController(
     private val _totalChunks = MutableStateFlow(0)
     val totalChunks: StateFlow<Int> = _totalChunks.asStateFlow()
 
-    // 统一播放状态（融合音频播放 + 分片进度）
+    // Unified playback state (audio playback + chunk progress combined)
     private val _playbackState = MutableStateFlow(PlaybackState())
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     init {
-        // 同步底层播放器状态到统一状态，并补充分片信息
+        // Sync the underlying player state into the unified state and add chunk info
         scope.launch {
             audio.playbackState.collectLatest { audioState ->
                 _playbackState.update {
@@ -96,7 +96,7 @@ class TtsController(
         }
     }
 
-    /** 选择/取消选择 Provider */
+    /** Select/deselect a Provider */
     fun setProvider(provider: TTSProviderSetting?) {
         currentProvider = provider
         _isAvailable.update { provider != null }
@@ -104,9 +104,9 @@ class TtsController(
     }
 
     /**
-     * 朗读文本
-     * - flush=true: 清空当前进度并重新开始
-     * - flush=false: 继续队列，追加朗读
+     * Speak text
+     * - flush=true: clear the current progress and start over
+     * - flush=false: continue the queue and append the text
      */
     fun speak(text: String, flush: Boolean = true) {
         if (text.isBlank()) return
@@ -125,7 +125,7 @@ class TtsController(
             queue.addAll(newChunks)
             _currentChunk.update { 0 }
         } else {
-            // 追加时，重映射 index 以保持全局顺序
+            // When appending, remap the index to keep the global order
             val startIndex = (allChunks.lastOrNull()?.index ?: -1) + 1
             val remapped = newChunks.mapIndexed { i, c -> c.copy(index = startIndex + i) }
             allChunks.addAll(remapped)
@@ -162,31 +162,31 @@ class TtsController(
         _playbackState.update { PlaybackState(status = PlaybackStatus.Idle) }
     }
 
-    /** 暂停播放（保留进度） */
+    /** Pause playback (keeping progress) */
     fun pause() {
         isPaused = true
         audio.pause()
         _playbackState.update { it.copy(status = PlaybackStatus.Paused) }
     }
 
-    /** 恢复播放 */
+    /** Resume playback */
     fun resume() {
         isPaused = false
         audio.resume()
         _playbackState.update { it.copy(status = PlaybackStatus.Playing) }
     }
 
-    /** 快进当前音频 */
+    /** Fast-forward the current audio */
     fun fastForward(ms: Long = 5_000) {
         audio.seekBy(ms)
     }
 
-    /** 设置播放速度 */
+    /** Set the playback speed */
     fun setSpeed(speed: Float) {
         audio.setSpeed(speed)
     }
 
-    /** 跳过下一段（不打断当前正在播放） */
+    /** Skip the next chunk (without interrupting the one currently playing) */
     fun skipNext() {
         if (queue.isNotEmpty()) {
             queue.poll()
@@ -194,7 +194,7 @@ class TtsController(
         }
     }
 
-    /** 停止并清空状态 */
+    /** Stop and clear the state */
     fun stop() {
         workerJob?.cancel()
         audio.stop()
@@ -210,14 +210,14 @@ class TtsController(
         _playbackState.update { PlaybackState(status = PlaybackStatus.Idle) }
     }
 
-    /** 释放资源 */
+    /** Release resources */
     fun dispose() {
         stop()
         scope.cancel()
         audio.release()
     }
 
-    // region 内部：播放调度
+    // region Internal: playback scheduling
     private fun startWorker() {
         val provider = currentProvider
         if (provider == null) {
@@ -237,7 +237,7 @@ class TtsController(
 
                     val chunk = queue.poll() ?: break
 
-                    // 更新状态（1-based）
+                    // Update the state (1-based)
                     _currentChunk.update { processedCount + 1 }
                     _totalChunks.update { queue.size + 1 }
                     _playbackState.update {
@@ -247,7 +247,7 @@ class TtsController(
                         )
                     }
 
-                    // 仅预取当前分片后的固定窗口
+                    // Only prefetch a fixed window after the current chunk
                     prefetchNextChunks(chunk.index)
 
                     val response = try {
@@ -260,7 +260,7 @@ class TtsController(
                         continue
                     }
 
-                    // 播放
+                    // Play
                     try {
                         audio.play(response)
                     } catch (e: Exception) {
@@ -299,7 +299,7 @@ class TtsController(
         return try {
             deferred.await()
         } catch (e: Exception) {
-            // 避免后续复用已经失败或取消的 Deferred
+            // Avoid reusing a Deferred that has already failed or been cancelled
             cache.remove(chunk.id, deferred)
             throw e
         }

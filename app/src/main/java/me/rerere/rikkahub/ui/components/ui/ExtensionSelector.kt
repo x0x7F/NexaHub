@@ -51,8 +51,8 @@ fun ExtensionSelector(
     var skills by remember { mutableStateOf<List<SkillMetadata>>(emptyList()) }
 
     LaunchedEffect(Unit) {
-        // 打开扩展面板时清理运行时被删除的技能（残留的 enabledSkills 引用），
-        // prune 顺带返回现存技能列表，避免重复读盘
+        // When the extensions panel opens, clean up skills deleted at runtime (leftover enabledSkills references);
+        // prune also returns the existing skill list, avoiding a second disk read
         skills = skillManager.pruneOrphanedEnabledSkills()
     }
 

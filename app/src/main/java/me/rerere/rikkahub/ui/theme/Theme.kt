@@ -77,10 +77,10 @@ fun RikkahubTheme(
     }
     val extendColors = if (darkTheme) ExtendDarkColors else ExtendLightColors
 
-    // 更新状态栏图标颜色
+    // Update the status bar icon colors
     val view = LocalView.current
     val activity = view.context.getActivity()
-    // 浮窗可能使用 Application Context，没有可更新系统栏的 Activity。
+    // A floating window may use the Application Context, which has no Activity whose system bars can be updated.
     if (!view.isInEditMode && activity != null) {
         DisposableEffect(view, activity, darkTheme) {
             val window = activity.window
@@ -92,7 +92,7 @@ fun RikkahubTheme(
                 isAppearanceLightNavigationBars = !darkTheme
             }
             onDispose {
-                // 嵌套主题（如终端的深色主题）退出时恢复原有系统栏图标颜色。
+                // Restore the original system bar icon colors when a nested theme (such as the terminal's dark theme) exits.
                 controller.isAppearanceLightStatusBars = previousLightStatusBars
                 controller.isAppearanceLightNavigationBars = previousLightNavigationBars
             }

@@ -43,9 +43,9 @@ fun ToolApprovalState.canResumeToolExecution(): Boolean {
 }
 
 /**
- * 服务端工具调用的通用生命周期状态。
+ * Generic lifecycle state of a server tool call.
  *
- * Provider 返回的更细粒度状态应保存在 [UIMessagePart.ServerTool.metadata] 中，避免在通用层绑定具体协议。
+ * Finer-grained states returned by a provider should be stored in [UIMessagePart.ServerTool.metadata], so the generic layer isn't bound to a specific protocol.
  */
 @Serializable
 enum class ServerToolStatus {
@@ -160,10 +160,10 @@ sealed class UIMessagePart {
     ) : UIMessagePart()
 
     /**
-     * 由 Provider 在服务端执行的工具调用，例如网页搜索、文件检索或代码执行。
+     * A tool call executed server-side by the provider, such as web search, file search or code execution.
      *
-     * 与 [Tool] 不同，此类型只追踪调用及结果，不参与客户端审批或执行流程。[input] 和 [output]
-     * 使用通用 JSON，以容纳不同 Provider、不同工具的协议结构；需要原样回传的 Provider 数据也应保留在其中。
+     * Unlike [Tool], this type only tracks the call and its result and takes no part in client-side approval or execution. [input] and [output]
+     * use generic JSON to fit the protocol structures of different providers and tools; provider data that must be sent back as-is also lives there.
      */
     @Serializable
     @SerialName("server_tool")

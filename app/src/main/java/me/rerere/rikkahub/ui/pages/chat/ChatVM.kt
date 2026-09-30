@@ -51,16 +51,16 @@ class ChatVM(
 ) : ViewModel() {
     private val _conversationId: Uuid = Uuid.parse(id)
     val conversation: StateFlow<Conversation> = chatService.getConversationFlow(_conversationId)
-    var chatListInitialized by mutableStateOf(false) // 聊天列表是否已经滚动到底部
+    var chatListInitialized by mutableStateOf(false) // Whether the chat list has scrolled to the bottom
 
-    // 聊天输入状态 - 保存在 ViewModel 中避免 TransactionTooLargeException
+    // Chat input state - kept in the ViewModel to avoid TransactionTooLargeException
     val inputState = ChatInputState()
 
     val voiceSession = VoiceSessionController(viewModelScope, context::getString) {
         chatService.enqueueVoiceMessage(_conversationId, it)
     }
 
-    // 异步任务 (从ChatService获取，响应式)
+    // Async jobs (from ChatService, reactive)
     val conversationJob: StateFlow<Job?> =
         chatService
             .getGenerationJobStateFlow(_conversationId)
@@ -75,40 +75,40 @@ class ChatVM(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     init {
-        // 添加对话引用
+        // Add a conversation reference
         chatService.addConversationReference(_conversationId)
 
-        // 初始化对话
+        // Initialize the conversation
         viewModelScope.launch {
             chatService.initializeConversation(_conversationId)
         }
 
-        // 记住对话ID, 方便下次启动恢复
+        // Remember the conversation ID so it can be restored on the next launch
         context.writeStringPreference("lastConversationId", _conversationId.toString())
     }
 
     override fun onCleared() {
         voiceSession.stop()
         super.onCleared()
-        // 移除对话引用
+        // Remove the conversation reference
         chatService.removeConversationReference(_conversationId)
     }
 
-    // 用户设置
+    // User settings
     val settings: StateFlow<Settings> =
         settingsStore.settingsFlow.stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
 
-    // 网络搜索(每个助手独立)
+    // Web search (per assistant)
     val enableWebSearch = settings.map {
         it.getCurrentAssistant().enableWebSearch
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    // 当前模型
+    // Current model
     val currentChatModel = settings.map { settings ->
         settings.getCurrentChatModel()
     }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-    // 错误状态
+    // Error state
     val errors: StateFlow<List<ChatError>> = chatService.errors
 
     fun dismissError(id: Uuid) = chatService.dismissError(id)
@@ -126,23 +126,23 @@ class ChatVM(
 
     fun resumeMessageQueue() = chatService.resumeMessageQueue(_conversationId)
 
-    // 生成完成
+    // Generation finished
     val generationDoneFlow: SharedFlow<Uuid> = chatService.generationDoneFlow
 
-    // MCP管理器
+    // MCP manager
     val mcpManager = chatService.mcpManager
 
-    // 更新设置
+    // Update settings
     fun updateSettings(newSettings: Settings): Job {
         return viewModelScope.launch {
             val oldSettings = settings.value
-            // 检查用户头像是否有变化，如果有则删除旧头像
+            // Check whether the user avatar changed; if so, delete the old avatar
             checkUserAvatarDelete(oldSettings, newSettings)
             settingsStore.update(newSettings)
         }
     }
 
-    // 检查用户头像删除
+    // Check user avatar deletion
     private fun checkUserAvatarDelete(oldSettings: Settings, newSettings: Settings) {
         val oldAvatar = oldSettings.displaySetting.userAvatar
         val newAvatar = newSettings.displaySetting.userAvatar
@@ -152,7 +152,7 @@ class ChatVM(
         }
     }
 
-    // 设置聊天模型
+    // Set the chat model
     fun setChatModel(assistant: Assistant, model: Model) {
         viewModelScope.launch {
             settingsStore.update { settings ->
@@ -171,10 +171,10 @@ class ChatVM(
     }
 
     /**
-     * 处理消息发送
+     * Handle sending a message
      *
-     * @param content 消息内容
-     * @param answer 是否触发消息生成，如果为false，则仅添加消息到消息列表中
+     * @param content the message content
+     * @param answer whether to trigger message generation; if false, the message is only added to the message list
      */
     fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
@@ -216,7 +216,7 @@ class ChatVM(
 
     fun showDeleteBlockedWhileGeneratingError() {
         chatService.addError(
-            error = IllegalStateException("请先停止生成再删除消息"),
+            error = IllegalStateException("Stop generating before deleting messages"),
             conversationId = _conversationId,
             title = context.getString(R.string.error_title_operation)
         )

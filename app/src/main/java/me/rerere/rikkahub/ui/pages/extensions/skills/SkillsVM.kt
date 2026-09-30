@@ -63,7 +63,7 @@ class SkillsVM(
                 val fileName = FileUtils.getFileNameFromUri(appContext, uri).orEmpty()
                 val bytes = appContext.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                     ?: run {
-                        withContext(Dispatchers.Main) { onResult(false, "无法读取文件") }
+                        withContext(Dispatchers.Main) { onResult(false, "Couldn't read the file") }
                         return@launch
                     }
 
@@ -78,7 +78,7 @@ class SkillsVM(
                     onResult(true, importedNames.joinToString())
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { onResult(false, e.message ?: "未知错误") }
+                withContext(Dispatchers.Main) { onResult(false, e.message ?: "Unknown error") }
             }
         }
     }
@@ -87,7 +87,7 @@ class SkillsVM(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val info = parseGitHubUrl(repoUrl) ?: run {
-                    withContext(Dispatchers.Main) { onResult(false, "无效的 GitHub 仓库链接") }
+                    withContext(Dispatchers.Main) { onResult(false, "Invalid GitHub repository link") }
                     return@launch
                 }
 
@@ -95,33 +95,33 @@ class SkillsVM(
                 val files = mutableListOf<Pair<String, String>>() // relativePath -> downloadUrl
                 val listed = listFilesRecursively(info.owner, info.repo, info.branch, info.path, info.path, files)
                 if (!listed) {
-                    withContext(Dispatchers.Main) { onResult(false, "读取 GitHub 目录失败") }
+                    withContext(Dispatchers.Main) { onResult(false, "Failed to read the GitHub directory") }
                     return@launch
                 }
 
                 val skillMdEntry = files.find { it.first == "SKILL.md" } ?: run {
-                    withContext(Dispatchers.Main) { onResult(false, "目录中未找到 SKILL.md") }
+                    withContext(Dispatchers.Main) { onResult(false, "SKILL.md not found in the directory") }
                     return@launch
                 }
 
                 val skillMdBytes = downloadBytes(skillMdEntry.second) ?: run {
-                    withContext(Dispatchers.Main) { onResult(false, "下载 SKILL.md 失败，请检查链接或网络") }
+                    withContext(Dispatchers.Main) { onResult(false, "Failed to download SKILL.md; check the link or your network") }
                     return@launch
                 }
 
                 val frontmatter = SkillFrontmatterParser.parse(skillMdBytes.toString(Charsets.UTF_8))
                 val name = frontmatter["name"]
                 if (name.isNullOrBlank()) {
-                    withContext(Dispatchers.Main) { onResult(false, "SKILL.md 格式错误：缺少 name 字段") }
+                    withContext(Dispatchers.Main) { onResult(false, "Invalid SKILL.md: missing name field") }
                     return@launch
                 }
 
-                // 按字节下载保存，避免图片等二进制附属文件被当作 UTF-8 文本解码而损坏
+                // Download and save as bytes, so binary supporting files such as images aren't corrupted by decoding them as UTF-8 text
                 val fileContents = LinkedHashMap<String, ByteArray>()
                 for ((relativePath, downloadUrl) in files) {
                     val content = if (relativePath == "SKILL.md") skillMdBytes else downloadBytes(downloadUrl)
                     if (content == null) {
-                        withContext(Dispatchers.Main) { onResult(false, "下载文件失败：$relativePath") }
+                        withContext(Dispatchers.Main) { onResult(false, "Failed to download file: $relativePath") }
                         return@launch
                     }
                     fileContents[relativePath] = content
@@ -129,7 +129,7 @@ class SkillsVM(
 
                 val saved = skillManager.saveSkillFileBytesAtomically(name, fileContents)
                 if (!saved) {
-                    withContext(Dispatchers.Main) { onResult(false, "保存失败") }
+                    withContext(Dispatchers.Main) { onResult(false, "Save failed") }
                     return@launch
                 }
 
@@ -137,7 +137,7 @@ class SkillsVM(
                 withContext(Dispatchers.Main) { onResult(true, name) }
             } catch (e: Exception) {
                 e.printStackTrace()
-                withContext(Dispatchers.Main) { onResult(false, e.message ?: "未知错误") }
+                withContext(Dispatchers.Main) { onResult(false, e.message ?: "Unknown error") }
             }
         }
     }
@@ -147,12 +147,12 @@ class SkillsVM(
         val frontmatter = SkillFrontmatterParser.parse(content)
         val name = frontmatter["name"]?.trim()
         if (name.isNullOrBlank()) {
-            error("SKILL.md 格式错误：缺少 name 字段")
+            error("Invalid SKILL.md: missing name field")
         }
         if (frontmatter["description"].isNullOrBlank()) {
-            error("SKILL.md 格式错误：缺少 description 字段")
+            error("Invalid SKILL.md: missing description field")
         }
-        val saved = skillManager.saveSkill(name, content) ?: error("保存失败，请检查技能格式")
+        val saved = skillManager.saveSkill(name, content) ?: error("Save failed; check the skill format")
         return listOf(saved.name)
     }
 
@@ -178,7 +178,7 @@ class SkillsVM(
             .filter { it.substringAfterLast('/').equals("SKILL.md", ignoreCase = true) }
             .sorted()
         if (skillMdPaths.isEmpty()) {
-            error("压缩包中未找到 SKILL.md")
+            error("SKILL.md not found in the archive")
         }
         val skillBasePaths = skillMdPaths.map {
             it.substringBeforeLast('/', missingDelimiterValue = "")
@@ -187,14 +187,14 @@ class SkillsVM(
         val importedNames = mutableListOf<String>()
         for (skillMdPath in skillMdPaths) {
             val skillContent = files[skillMdPath]?.toString(Charsets.UTF_8)
-                ?: error("读取失败：$skillMdPath")
+                ?: error("Read failed: $skillMdPath")
             val frontmatter = SkillFrontmatterParser.parse(skillContent)
             val name = frontmatter["name"]?.trim()
             if (name.isNullOrBlank()) {
-                error("$skillMdPath 格式错误：缺少 name 字段")
+                error("Invalid $skillMdPath: missing name field")
             }
             if (frontmatter["description"].isNullOrBlank()) {
-                error("$skillMdPath 格式错误：缺少 description 字段")
+                error("Invalid $skillMdPath: missing description field")
             }
 
             val basePath = skillMdPath.substringBeforeLast('/', missingDelimiterValue = "")
@@ -212,7 +212,7 @@ class SkillsVM(
 
             val saved = skillManager.saveSkillFileBytesAtomically(name, skillFiles)
             if (!saved) {
-                error("保存失败：$name")
+                error("Save failed: $name")
             }
             importedNames += name
         }
@@ -318,9 +318,9 @@ class SkillsVM(
         connection.setRequestProperty("Accept", "application/vnd.github+json")
         return try {
             val code = connection.responseCode
-            // 未登录的 GitHub API 每小时仅 60 次，超限时给出明确提示而不是笼统的"读取失败"
+            // The unauthenticated GitHub API only allows 60 requests per hour; give a clear message when the limit is hit instead of a generic "read failed"
             if ((code == 403 || code == 429) && connection.getHeaderField("X-RateLimit-Remaining") == "0") {
-                error("GitHub API 请求次数已达上限，请稍后再试")
+                error("GitHub API rate limit reached; please try again later")
             }
             if (code == 200) connection.inputStream.use { it.readBytes() } else null
         } finally {

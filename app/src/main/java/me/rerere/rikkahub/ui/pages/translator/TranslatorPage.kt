@@ -73,10 +73,10 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
 
-    // 处理错误
+    // Handle errors
     LaunchedEffect(Unit) {
         vm.errorFlow.collect { error ->
-            toaster.show(error.message ?: "错误", type = ToastType.Error)
+            toaster.show(error.message ?: "Error", type = ToastType.Error)
         }
     }
 
@@ -126,7 +126,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 输入区域
+            // Input area
             Column {
                 OutlinedTextField(
                     value = inputText,
@@ -152,11 +152,11 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                     }
                 ) {
                     Icon(HugeIcons.Clipboard, null)
-                    Text("粘贴文本", modifier = Modifier.padding(start = 4.dp))
+                    Text("Paste text", modifier = Modifier.padding(start = 4.dp))
                 }
             }
 
-            // 翻译进度条
+            // Translation progress bar
             Crossfade(translating) { isTranslating ->
                 if (isTranslating) {
                     LinearWavyProgressIndicator(
@@ -169,7 +169,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                 }
             }
 
-            // 翻译结果
+            // Translation result
             SelectionContainer {
                 Text(
                     text = translatedText.ifEmpty {
@@ -197,7 +197,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                     }
                 ) {
                     Icon(HugeIcons.Clipboard, null)
-                    Text("复制翻译结果", modifier = Modifier.padding(start = 4.dp))
+                    Text("Copy translation", modifier = Modifier.padding(start = 4.dp))
                 }
             }
         }
@@ -291,7 +291,7 @@ private fun BottomBar(
 ) {
     BottomAppBar(
         actions = {
-            // 目标语言选择
+            // Target language selection
             LanguageSelector(
                 targetLanguage = targetLanguage,
                 onLanguageSelected = { onLanguageSelected(it) }

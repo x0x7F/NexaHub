@@ -14,17 +14,17 @@ class HttpException(
 fun JsonElement.parseErrorDetail(): HttpException {
     return when (this) {
         is JsonObject -> {
-            // 尝试获取常见的错误字段
+            // Try the common error fields
             val errorFields = listOf("error", "detail", "message", "description")
 
-            // 查找第一个存在的错误字段
+            // Find the first error field that exists
             val foundField = errorFields.firstOrNull { this[it] != null }
 
             if (foundField != null) {
-                // 递归解析找到的字段值
+                // Recursively parse the value of the field found
                 this[foundField]!!.parseErrorDetail()
             } else {
-                // 如果没有找到任何错误字段，序列化整个对象
+                // If no error field is found, serialize the whole object
                 HttpException(Json.encodeToString(JsonElement.serializer(), this))
             }
         }
@@ -33,18 +33,18 @@ fun JsonElement.parseErrorDetail(): HttpException {
             if (this.isEmpty()) {
                 HttpException("Unknown error: Empty JSON array")
             } else {
-                // 递归解析数组的第一个元素
+                // Recursively parse the first element of the array
                 this.first().parseErrorDetail()
             }
         }
 
         is JsonPrimitive -> {
-            // 对于基本类型，直接使用其内容
+            // For primitives, use their content directly
             HttpException(this.jsonPrimitive.content)
         }
 
         else -> {
-            // 其他情况，序列化整个元素
+            // Otherwise, serialize the whole element
             HttpException(Json.encodeToString(JsonElement.serializer(), this))
         }
     }

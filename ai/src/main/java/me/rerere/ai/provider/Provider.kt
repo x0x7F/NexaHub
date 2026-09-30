@@ -12,8 +12,8 @@ import me.rerere.ai.ui.StreamChunk
 import me.rerere.ai.ui.UIMessage
 import kotlin.uuid.Uuid
 
-// 提供商实现
-// 采用无状态设计，使用时除了需要传入需要的参数外，还需要传入provider setting作为参数
+// Provider implementation
+// Stateless by design: besides the required arguments, callers also pass the provider setting as a parameter
 interface Provider<T : ProviderSetting> {
     suspend fun listModels(providerSetting: T): List<Model>
 

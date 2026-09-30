@@ -12,9 +12,9 @@ import java.util.Locale
 import kotlin.time.toJavaInstant
 
 /**
- * 时间提醒注入转换器
+ * Time reminder injection transformer
  *
- * 在时间间隔较大的消息之前自动注入 <time_reminder>，帮助 AI 了解对话的时间间隔
+ * Automatically injects <time_reminder> before messages separated by a long time gap, helping the AI understand the time between messages
  */
 object TimeReminderTransformer : InputMessageTransformer {
     override suspend fun transform(

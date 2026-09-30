@@ -28,15 +28,15 @@ interface ExportSerializer<T> {
     fun export(data: T): ExportData
     fun import(context: Context, uri: Uri): Result<T>
 
-    // 获取导出文件名
+    // Get the export file name
     fun getExportFileName(data: T): String = "${type}.json"
 
-    // 便捷方法：直接导出为 JSON 字符串
+    // Convenience method: export directly to a JSON string
     fun exportToJson(data: T, json: Json = DefaultJson): String {
         return json.encodeToString(ExportData.serializer(), export(data))
     }
 
-    // 读取 URI 内容的便捷方法
+    // Convenience method for reading URI content
     fun readUri(context: Context, uri: Uri): String {
         return context.contentResolver.openInputStream(uri)
             ?.bufferedReader()
@@ -79,7 +79,7 @@ object ModeInjectionSerializer : ExportSerializer<PromptInjection.ModeInjection>
     override fun import(context: Context, uri: Uri): Result<PromptInjection.ModeInjection> {
         return runCatching {
             val json = readUri(context, uri)
-            // 首先尝试解析为自己的格式
+            // First try parsing our own format
             tryImportNative(json)
                 ?: throw IllegalArgumentException("Unsupported format")
         }
@@ -116,9 +116,9 @@ object LorebookSerializer : ExportSerializer<Lorebook> {
     override fun import(context: Context, uri: Uri): Result<Lorebook> {
         return runCatching {
             val json = readUri(context, uri)
-            // 首先尝试解析为自己的格式
+            // First try parsing our own format
             tryImportNative(json)
-            // 然后尝试解析为 SillyTavern 格式
+            // Then try parsing the SillyTavern format
                 ?: tryImportSillyTavern(json, getUriFileName(context, uri)?.removeSuffix(".json"))
                 ?: throw IllegalArgumentException("Unsupported format")
         }
@@ -163,7 +163,7 @@ object LorebookSerializer : ExportSerializer<Lorebook> {
                         injectDepth = entry.depth,
                         content = entry.content,
                         keywords = entry.key,
-                        useRegex = false, // SillyTavern 格式不支持 useRegex
+                        useRegex = false, // The SillyTavern format doesn't support useRegex
                         caseSensitive = entry.caseSensitive ?: false,
                         scanDepth = entry.scanDepth ?: 4,
                         constantActive = entry.constant,
@@ -178,8 +178,8 @@ object LorebookSerializer : ExportSerializer<Lorebook> {
             0 -> InjectionPosition.BEFORE_SYSTEM_PROMPT
             1 -> InjectionPosition.AFTER_SYSTEM_PROMPT
             2 -> InjectionPosition.TOP_OF_CHAT
-            3 -> InjectionPosition.TOP_OF_CHAT // After Examples -> 聊天历史开头
-            4 -> InjectionPosition.AT_DEPTH    // @Depth 模式
+            3 -> InjectionPosition.TOP_OF_CHAT // After Examples -> start of the chat history
+            4 -> InjectionPosition.AT_DEPTH    // @Depth mode
             else -> InjectionPosition.AFTER_SYSTEM_PROMPT
         }
     }

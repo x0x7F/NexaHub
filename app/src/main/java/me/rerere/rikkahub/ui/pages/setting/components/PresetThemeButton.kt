@@ -146,7 +146,7 @@ fun PresetThemeButtonGroup(
                 )
             }
         }
-        // 补齐最后一行的空位, 让每列宽度保持一致
+        // Pad the empty slots in the last row so every column keeps the same width
         repeat((THEME_GRID_COLUMNS - PresetThemes.size % THEME_GRID_COLUMNS) % THEME_GRID_COLUMNS) {
             Spacer(modifier = Modifier.weight(1f))
         }

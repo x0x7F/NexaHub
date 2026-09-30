@@ -213,7 +213,7 @@ private fun validateChartArgs(params: JsonObject): String? {
 private fun validateAxis(axisName: String, axis: JsonObject, style: String): String? {
     val hasMin = "min" in axis
     val hasMax = "max" in axis
-    // 折线图/柱状图的 X 轴是类目轴, 没有可映射的数值范围或对数刻度
+    // The X axis of line/bar charts is a category axis, with no numeric range or log scale to map
     if (axisName == "x_axis" && style != "scatter" && (hasMin || hasMax || axis.string("scale") == "log")) {
         return "x_axis.min/max and log scale are not supported for $style charts (the X axis is categorical); " +
             "use y_axis for range and log scale"
@@ -236,7 +236,7 @@ private fun validateAxis(axisName: String, axis: JsonObject, style: String): Str
     }
 
     val data = axis["data"]
-    // 标签只用于折线图/柱状图的类目 X 轴, 其余情况渲染时会被忽略
+    // Labels are only used for the category X axis of line/bar charts and are ignored otherwise
     if (data != null && (axisName == "y_axis" || style == "scatter")) {
         return if (axisName == "y_axis") {
             "y_axis.data is not supported; category labels belong to x_axis.data"

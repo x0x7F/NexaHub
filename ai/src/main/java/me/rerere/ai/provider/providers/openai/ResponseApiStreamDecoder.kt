@@ -175,14 +175,14 @@ internal class ResponseApiStreamDecoder : StreamChunkDecoder {
         }
     }
 
-    // 部分兼容网关的 arguments 事件不带 item_id，只带 call_id，依次回退到 call_id、output_index
+    // Some compatible gateways send arguments events without item_id, only call_id; fall back to call_id, then output_index
     private fun resolveToolCallId(payload: JsonObject, itemId: String?, outputIndex: Int?): String =
         itemId?.let { state.toolCallIdsByItemId[it] ?: it }
             ?: payload["call_id"]?.jsonPrimitive?.contentOrNull
             ?: outputIndex?.let { state.toolCallIdsByOutputIndex[it] }
             ?: error("item_id not found")
 
-    // function_call 的 item.id 在规范中是可选的，只有 call_id 必填
+    // A function_call's item.id is optional in the spec; only call_id is required
     private fun JsonObject.itemIdOrCallId(): String? =
         this["id"]?.jsonPrimitive?.contentOrNull ?: this["call_id"]?.jsonPrimitive?.contentOrNull
 
@@ -286,7 +286,7 @@ internal class ResponseApiStreamDecoder : StreamChunkDecoder {
             val ids = openReasoningIds.filter { it.startsWith("$itemId:reasoning:") }
             if (ids.isNotEmpty()) return ids.flatMap { endReasoning(it, metadata) }
 
-            // encrypted_content 可以在 summary 为空时单独出现，仍需物化 metadata-only reasoning part。
+            // encrypted_content can appear on its own with an empty summary; a metadata-only reasoning part must still be materialized.
             val id = "$itemId:reasoning:metadata:0"
             return startReasoning(id, metadata, ReasoningType.REASONING_TEXT) + endReasoning(id, metadata)
         }

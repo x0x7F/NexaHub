@@ -67,10 +67,10 @@ async function detectUploadFile(
   const buffer = await file.slice(0, 4100).arrayBuffer();
   const detected = await fileTypeFromBuffer(buffer);
 
-  // 无法识别 magic bytes → 文本文件 → 允许，强制 text/plain 防止 OS MIME 映射污染（如 .ts → video/mp2t）
+  // Unrecognized magic bytes → text file → allowed; force text/plain to avoid OS MIME mapping pollution (e.g. .ts → video/mp2t)
   if (!detected) return { allowed: true, mimeType: "text/plain" };
 
-  // 识别为图片 / 视频 / 音频 → 允许，使用 magic bytes 检测到的 MIME
+  // Recognized as image / video / audio → allowed, using the MIME detected from the magic bytes
   if (
     detected.mime.startsWith("image/") ||
     detected.mime.startsWith("video/") ||
@@ -79,7 +79,7 @@ async function detectUploadFile(
     return { allowed: true, mimeType: detected.mime };
   }
 
-  // 允许常见文档格式
+  // Allow common document formats
   const ALLOWED_DOCUMENT_MIMES = new Set([
     "application/pdf",
     "application/msword",
@@ -93,7 +93,7 @@ async function detectUploadFile(
     return { allowed: true, mimeType: detected.mime };
   }
 
-  // 其他可识别的二进制格式（exe、zip 等）→ 拒绝
+  // Other recognizable binary formats (exe, zip, etc.) → rejected
   return { allowed: false, mimeType: detected.mime };
 }
 
@@ -277,7 +277,7 @@ function ChatInputInner({
 
       const formData = new FormData();
       uploadableFiles.forEach(({ file, mimeType }) => {
-        // 用 magic bytes 检测结果覆盖浏览器的 file.type，修正跨平台 MIME 歧义
+        // Override the browser's file.type with the magic-byte detection result, fixing cross-platform MIME ambiguity
         const safeFile =
           file.type !== mimeType
             ? new globalThis.File([file], file.name, { type: mimeType })
@@ -382,9 +382,9 @@ function ChatInputInner({
       if (isGenerating) return;
       if (event.nativeEvent.isComposing) return;
 
-      // 镜像逻辑：
-      // sendOnEnter = true: Enter 发送，Shift+Enter 换行
-      // sendOnEnter = false: Shift+Enter 发送，Enter 换行
+      // Mirrored logic:
+      // sendOnEnter = true: Enter sends, Shift+Enter inserts a newline
+      // sendOnEnter = false: Shift+Enter sends, Enter inserts a newline
       const shouldSend = sendOnEnter ? !event.shiftKey : event.shiftKey;
       if (!shouldSend) return;
 
@@ -406,7 +406,7 @@ function ChatInputInner({
     async (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
       if (!canUpload) return;
 
-      // 粘贴长文本自动转换为文件
+      // Automatically convert long pasted text into a file
       if (pasteLongTextAsFile) {
         const text = event.clipboardData.getData("text/plain");
         if (text.length > pasteLongTextThreshold) {
@@ -718,7 +718,7 @@ function ChatInputInner({
               <ModelList disabled={!canSwitchModel} className="max-w-[120px] sm:max-w-56" />
               <ReasoningPickerButton disabled={!canSwitchModel} />
               <Button
-                aria-label={canStop ? "停止生成" : "发送消息"}
+                aria-label={canStop ? "Stop generating" : "Send message"}
                 title={sendHint}
                 onClick={() => {
                   void handlePrimaryAction();

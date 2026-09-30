@@ -196,9 +196,9 @@ private fun MainPage(vm: DebugVM) {
         val toaster = LocalToaster.current
         Button(
             onClick = {
-                toaster.show("测试 ${counter++}")
-                toaster.show("测试 ${counter++}", type = ToastType.Info)
-                toaster.show("测试 ${counter++}", type = ToastType.Error)
+                toaster.show("Test ${counter++}")
+                toaster.show("Test ${counter++}", type = ToastType.Info)
+                toaster.show("Test ${counter++}", type = ToastType.Error)
             }
         ) {
             Text("toast")
@@ -212,15 +212,15 @@ private fun MainPage(vm: DebugVM) {
                 )
             }
         ) {
-            Text("重置Chat模型")
+            Text("Reset chat model")
         }
 
         Button(
             onClick = {
-                error("测试崩溃 ${Random.nextInt(0..1000)}")
+                error("Test crash ${Random.nextInt(0..1000)}")
             }
         ) {
-            Text("崩溃")
+            Text("Crash")
         }
 
         Row(
@@ -228,30 +228,30 @@ private fun MainPage(vm: DebugVM) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Conversation 数量: ${conversationCount?.toString() ?: "..."}",
+                text = "Conversation count: ${conversationCount?.toString() ?: "..."}",
                 modifier = Modifier.weight(1f),
             )
             Button(onClick = { vm.refreshConversationCount() }) {
-                Text("刷新")
+                Text("Refresh")
             }
         }
 
         Button(
             onClick = {
                 vm.createOversizedConversation(30)
-                toaster.show("正在创建 30MB 超大对话...")
+                toaster.show("Creating a 30MB conversation...")
             }
         ) {
-            Text("创建超大对话 (30MB)")
+            Text("Create a very large conversation (30MB)")
         }
 
         Button(
             onClick = {
                 vm.createConversationWithMessages(1024)
-                toaster.show("正在创建 1024 条消息对话...")
+                toaster.show("Creating a conversation with 1024 messages...")
             }
         ) {
-            Text("创建 1024 个消息的聊天")
+            Text("Create a chat with 1024 messages")
         }
 
         HorizontalDivider()
@@ -311,23 +311,23 @@ private fun RecoveryPage(vm: DebugVM) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            "扫描聊天记录中引用的助手，为设置中缺失的助手创建占位助手，使对应聊天记录重新可见。助手的其他配置无法恢复。",
+            "Scans the assistants referenced by chat history and creates placeholder assistants for those missing from settings, so their chats become visible again. Other assistant settings can't be recovered.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text("设置中的助手数: ${settings.assistants.size}")
-        Text("聊天记录中的助手数: ${conversationAssistants?.size?.toString() ?: "..."}")
-        Text("缺失的助手数: ${missing?.size?.toString() ?: "..."}")
+        Text("Assistants in settings: ${settings.assistants.size}")
+        Text("Assistants in chat history: ${conversationAssistants?.size?.toString() ?: "..."}")
+        Text("Missing assistants: ${missing?.size?.toString() ?: "..."}")
         missing?.forEach { (id, count) ->
             Text(
-                "$id ($count 个对话)",
+                "$id ($count conversations)",
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = JetbrainsMono,
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { vm.scanConversationAssistants() }) {
-                Text("重新扫描")
+                Text("Rescan")
             }
             Button(
                 enabled = !recovering && !settings.init && !missing.isNullOrEmpty(),
@@ -337,19 +337,19 @@ private fun RecoveryPage(vm: DebugVM) {
                         runCatching { vm.recoverAssistantsFromConversations() }
                             .onSuccess { count ->
                                 when (count) {
-                                    null -> toaster.show("设置尚未加载", type = ToastType.Error)
-                                    0 -> toaster.show("没有需要恢复的助手")
-                                    else -> toaster.show("已恢复 $count 个助手", type = ToastType.Success)
+                                    null -> toaster.show("Settings haven't loaded yet", type = ToastType.Error)
+                                    0 -> toaster.show("No assistants need to be restored")
+                                    else -> toaster.show("Restored $count assistants", type = ToastType.Success)
                                 }
                             }
                             .onFailure {
-                                toaster.show("恢复失败: ${it.message}", type = ToastType.Error)
+                                toaster.show("Restore failed: ${it.message}", type = ToastType.Error)
                             }
                         recovering = false
                     }
                 }
             ) {
-                Text("恢复")
+                Text("Restore")
             }
         }
     }

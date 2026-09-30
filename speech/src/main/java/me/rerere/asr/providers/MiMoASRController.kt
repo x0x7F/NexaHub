@@ -41,19 +41,19 @@ import java.util.Collections
 
 private const val TAG = "MiMoASR"
 
-// MiMo 官方限制: 单次请求 base64 不超过 10MB ≈ 7.5MB raw。
-// 16kHz / 16bit / mono 下 7.5MB ≈ 234 秒。提前在 6MB 触发自动 flush 留余量。
+// Official MiMo limit: base64 of a single request must not exceed 10MB ≈ 7.5MB raw.
+// 7.5MB ≈ 234 seconds at 16kHz / 16bit / mono. Trigger an automatic flush early at 6MB to leave headroom.
 private const val MAX_SEGMENT_BYTES = 6 * 1024 * 1024
 
 /**
- * 小米 MiMo ASR Controller。
+ * Xiaomi MiMo ASR Controller.
  *
- * MiMo ASR 不是 WebSocket 流式接口, 而是 OpenAI 兼容的 chat/completions HTTP 一次性
- * 识别接口。本 Controller 在录音期间按时间或字节阈值把 PCM 切成段, 每段独立转 WAV
- * 后 POST 到 MiMo, 返回的文本拼接到 completedTranscripts 并通过 onTranscriptChange
- * 回调。stop() 时把剩余 PCM 做最后一次 flush。
+ * MiMo ASR isn't a WebSocket streaming API but an OpenAI-compatible one-shot chat/completions HTTP
+ * recognition API. While recording, this controller cuts the PCM into segments by time or byte threshold, converts each to WAV
+ * and POSTs it to MiMo, appends the returned text to completedTranscripts and reports it through the onTranscriptChange
+ * callback. On stop() it does a final flush of the remaining PCM.
  *
- * 官方文档: https://platform.xiaomimimo.com/docs/zh-CN/api/audio/Speech-Recognition
+ * Official docs: https://platform.xiaomimimo.com/docs/api/audio/Speech-Recognition
  */
 class MiMoASRController(
     private val context: Context,
@@ -69,7 +69,7 @@ class MiMoASRController(
     private var audioRecord: AudioRecord? = null
     private var onTranscriptChange: ((String) -> Unit)? = null
 
-    // 同一时刻只允许一个 flush 协程在跑, 避免乱序拼结果
+    // Only one flush coroutine may run at a time, to avoid assembling results out of order
     private var flushJob: Job? = null
 
     private val bufferLock = Any()
@@ -96,7 +96,7 @@ class MiMoASRController(
         completedTranscripts.clear()
         flushJob = null
 
-        // MiMo 是 HTTP 一次性接口, 没有 WebSocket 连接阶段, 直接进入 Listening
+        // MiMo is a one-shot HTTP API with no WebSocket connection phase, so go straight to Listening
         _state.update {
             ASRState(
                 status = ASRStatus.Listening,
@@ -111,10 +111,10 @@ class MiMoASRController(
         releaseRecorder()
         _state.update { it.copy(status = ASRStatus.Stopping) }
 
-        // 把剩余 PCM 做最后一次 flush, 完成后切回 Idle
+        // Do a final flush of the remaining PCM, then switch back to Idle
         scope.launch(Dispatchers.IO) {
             try {
-                // 等当前正在跑的 flushJob 完成, 避免并发 flush 导致结果乱序
+                // Wait for the running flushJob to finish, so concurrent flushes don't produce out-of-order results
                 flushJob?.join()
                 flushSegment()
             } catch (e: Exception) {
@@ -177,7 +177,7 @@ class MiMoASRController(
                         }
 
                         if (shouldFlush) {
-                            // 用单独协程异步 flush, 不阻塞录音主循环
+                            // Flush asynchronously in a separate coroutine, without blocking the main recording loop
                             triggerFlush()
                         }
                     } else if (read < 0) {
@@ -194,7 +194,7 @@ class MiMoASRController(
     }
 
     private fun triggerFlush() {
-        // 同一时刻只跑一个 flush, 避免后发先至导致结果乱序
+        // Only run one flush at a time, so a later request finishing first doesn't produce out-of-order results
         if (flushJob?.isActive == true) return
         flushJob = scope.launch(Dispatchers.IO) {
             runCatching { flushSegment() }
@@ -203,8 +203,8 @@ class MiMoASRController(
     }
 
     /**
-     * 取出当前缓冲区里的 PCM, 转 WAV 后 POST 到 MiMo; 把识别结果加到 completedTranscripts。
-     * 在 bufferLock 内拷贝出 PCM 并立刻重置缓冲区, 不持有锁等待网络, 避免阻塞录音写。
+     * Take the PCM in the current buffer, convert it to WAV and POST it to MiMo; add the recognition result to completedTranscripts.
+     * The PCM is copied out inside bufferLock and the buffer reset immediately, without holding the lock while waiting on the network, to avoid blocking recording writes.
      */
     private suspend fun flushSegment() {
         val pcmBytes = synchronized(bufferLock) {
@@ -303,8 +303,8 @@ class MiMoASRController(
         private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 
         /**
-         * 把 raw PCM16 little-endian 数据封装成最小 WAV (RIFF/WAVE/fmt/data)。
-         * MiMo 官方只接受 WAV/MP3, AudioRecord 输出的是 PCM, 必须自己包 WAV 头。
+         * Wrap raw PCM16 little-endian data into a minimal WAV (RIFF/WAVE/fmt/data).
+         * MiMo officially only accepts WAV/MP3, and AudioRecord outputs PCM, so the WAV header has to be added manually.
          */
         private fun pcm16ToWav(
             pcm: ByteArray,

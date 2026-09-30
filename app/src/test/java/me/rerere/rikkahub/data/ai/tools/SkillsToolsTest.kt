@@ -72,7 +72,7 @@ class SkillsToolsTest {
         val description = prompt.substringAfter("<description>").substringBefore("</description>")
         assertEquals(1024 - injection.length, description.count { it == 'x' })
 
-        // 模型照抄转义后的名称也能加载
+        // Loading also works when the model copies the escaped name
         val result = tool.execute(buildJsonObject { put("name", "a&amp;b") })
         assertEquals("Escaped body", (result.single() as UIMessagePart.Text).text)
     }

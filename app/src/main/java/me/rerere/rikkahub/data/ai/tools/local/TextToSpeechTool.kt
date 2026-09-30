@@ -27,7 +27,7 @@ internal fun buildTextToSpeechTool(
         Provide natural, readable text without markdown formatting.
     """.trimIndent().replace("\n", " "),
     systemPrompt = { _, _ ->
-        // 当前选中的 TTS provider 若硬编码了语气标记引导，则注入 system prompt（否则为空）
+        // If the selected TTS provider has hard-coded tone-tag guidance, inject it into the system prompt (otherwise empty)
         settingsStore.settingsFlow.value.getSelectedTTSProvider()
             ?.let { ttsManager.getPromptGuidance(it) }
             .orEmpty()

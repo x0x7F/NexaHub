@@ -23,26 +23,26 @@ class TranslatorVM(
     val settings: StateFlow<Settings> = settingsStore.settingsFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
 
-    // 翻译状态
+    // Translation state
     private val _translating = MutableStateFlow(false)
     val translating: StateFlow<Boolean> = _translating
 
-    // 输入文本
+    // Input text
     private val _inputText = MutableStateFlow("")
     val inputText: StateFlow<String> = _inputText
 
-    // 翻译结果
+    // Translation result
     private val _translatedText = MutableStateFlow("")
     val translatedText: StateFlow<String> = _translatedText
 
-    // 翻译目标语言
+    // Target language
     private val _targetLanguage = MutableStateFlow(Locale.ENGLISH)
     val targetLanguage: StateFlow<Locale> = _targetLanguage
 
-    // 错误流
+    // Error flow
     val errorFlow = MutableSharedFlow<Throwable>()
 
-    // 当前任务
+    // Current job
     private var currentJob: Job? = null
 
     fun updateSettings(settings: Settings) {
@@ -63,10 +63,10 @@ class TranslatorVM(
         val inputText = _inputText.value
         if (inputText.isBlank()) return
 
-        // 取消当前任务
+        // Cancel the current job
         currentJob?.cancel()
 
-        // 设置翻译中状态
+        // Set the translating state
         _translating.value = true
         _translatedText.value = ""
 

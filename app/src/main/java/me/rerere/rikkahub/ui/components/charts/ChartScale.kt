@@ -30,7 +30,7 @@ internal fun ChartSpec.seriesColors(): List<Color> =
     series.mapIndexed { index, s -> s.color ?: ChartPalette[index % ChartPalette.size] }
 
 /**
- * 坐标轴刻度: 负责值到 [0, 1] 比例的映射以及刻度位置
+ * Axis scale: maps values to a [0, 1] ratio and computes tick positions
  */
 internal class ChartAxisScale(
     val min: Double,
@@ -75,7 +75,7 @@ private fun buildLinearScale(
         if (userMax == null) high = maxOf(high, 0.0)
     }
     if (high <= low) {
-        // 所有值相同或 min/max 冲突时扩展出一个可见范围
+        // When all values are equal or min/max conflict, expand to a visible range
         val pad = if (low == 0.0) 1.0 else abs(low) * 0.1
         if (includeZero && low == 0.0) high = low + pad else {
             low -= pad
@@ -140,14 +140,14 @@ private fun decimalsForStep(step: Double): Int {
     return 8
 }
 
-// 支持 f 风格格式: ".1f" ",.0f" ".0%" ",d"; 其它格式（如 strftime）忽略
+// Supports f-style formats: ".1f" ",.0f" ".0%" ",d"; other formats (such as strftime) are ignored
 private val NUMBER_FORMAT_REGEX = Regex("""^(,)?(?:\.(\d+))?([fd%])$""")
 
 /**
- * 格式化图表中的数字
+ * Format a number in a chart
  *
- * @param format 模型给出的格式字符串, 不支持时回退默认格式
- * @param decimals 回退格式使用的固定小数位数, 为 null 时自动决定
+ * @param format the format string given by the model; falls back to the default format when unsupported
+ * @param decimals the fixed number of decimal places for the fallback format; decided automatically when null
  */
 internal fun formatChartNumber(value: Double, format: String? = null, decimals: Int? = null): String {
     val spec = format?.let { NUMBER_FORMAT_REGEX.matchEntire(it.trim()) }

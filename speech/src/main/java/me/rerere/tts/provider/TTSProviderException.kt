@@ -1,7 +1,7 @@
 package me.rerere.tts.provider
 
 /**
- * TTS Provider 返回的 HTTP 错误。保留状态码供上层判断是否值得重试。
+ * HTTP error returned by a TTS provider. Keeps the status code so upper layers can decide whether a retry is worthwhile.
  */
 class TTSProviderException(
     message: String,

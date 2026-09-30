@@ -691,7 +691,7 @@ private fun HtmlProgress(element: Element) {
 
 /**
  * Renders a list of inline Jsoup nodes as a single Text composable with AnnotatedString.
- * This prevents inline siblings (e.g. <strong>A</strong>和<strong>B</strong>) from being
+ * This prevents inline siblings (e.g. <strong>A</strong>and<strong>B</strong>) from being
  * rendered on separate lines.
  */
 @Composable

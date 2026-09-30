@@ -3,10 +3,10 @@ package me.rerere.ai.provider.stream
 import kotlinx.serialization.Serializable
 
 /**
- * 与具体 HTTP 客户端无关的 Server-Sent Event。
+ * A Server-Sent Event independent of any specific HTTP client.
  *
- * [event] 对应 SSE 的 `event` 字段；Provider 响应 JSON 中的 `type` 仍保留在 [data] 内。
- * 轨迹测试记录这一层，因此可以在 OkHttp、Ktor 或其他传输实现之间复用。
+ * [event] maps to the SSE `event` field; the `type` in the provider's response JSON stays inside [data].
+ * Trace tests record at this layer, so they can be reused across OkHttp, Ktor or other transports.
  */
 @Serializable
 data class SseEvent(

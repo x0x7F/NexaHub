@@ -22,10 +22,10 @@ import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.rikkahub.R
 
 /**
- * 列表 item 的次要操作（复制、导出、重命名、删除等）。
+ * Secondary actions of a list item (copy, export, rename, delete, etc.).
  *
- * 约定：点击 item 本身执行主操作（进入详情/编辑），其余操作统一放进 [ItemActionMenu]；
- * 破坏性操作（删除）放在最后并标记 [destructive]，由调用方负责二次确认或提供撤销。
+ * Convention: tapping the item itself runs the primary action (open details/edit), and all other actions go into [ItemActionMenu];
+ * destructive actions (delete) go last and are marked [destructive]; the caller is responsible for confirming or offering undo.
  */
 @Immutable
 data class ItemAction(

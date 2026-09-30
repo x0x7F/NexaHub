@@ -109,7 +109,7 @@ class ChatCompletionsAPI(
         val bodyStr = response.body?.string() ?: ""
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
-        // 从 JsonObject 中提取必要的信息
+        // Extract the required information from the JsonObject
         val id = bodyJson["id"]?.jsonPrimitive?.contentOrNull ?: ""
         val model = bodyJson["model"]?.jsonPrimitive?.contentOrNull ?: ""
         val choice = bodyJson["choices"]?.jsonArray?.get(0)?.jsonObject ?: error("choices is null")
@@ -188,7 +188,7 @@ class ChatCompletionsAPI(
                 var exception = t
 
                 t?.printStackTrace()
-                println("[onFailure] 发生错误: ${t?.javaClass?.name} ${t?.message} / $response")
+                println("[onFailure] error: ${t?.javaClass?.name} ${t?.message} / $response")
 
                 val bodyRaw = response?.body?.stringSafe()
                 try {
@@ -216,10 +216,10 @@ class ChatCompletionsAPI(
         val eventSource = EventSources.createFactory(client).newEventSource(request, listener)
 
         awaitClose {
-            println("[awaitClose] 关闭eventSource ")
+            println("[awaitClose] closing eventSource ")
             eventSource.cancel()
         }
-        // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
+        // trySend silently drops deltas when the buffer is full, which drops characters mid-reply (#1295), so the buffer must be unbounded
     }.buffer(Channel.UNLIMITED).flowOn(Dispatchers.IO)
 
     private fun buildChatCompletionRequest(
@@ -250,14 +250,14 @@ class ChatCompletionsAPI(
 
             put("stream", stream)
             if (stream) {
-                if (host != "api.mistral.ai") { // mistral 不支持 stream_options
+                if (host != "api.mistral.ai") { // Mistral does not support stream_options
                     put("stream_options", buildJsonObject {
                         put("include_usage", true)
                     })
                 }
             }
 
-            // open router适配
+            // OpenRouter compatibility
             if(isOpenRouter) {
                 params.sessionId?.let { put("session_id", it) }
                 if(params.model.outputModalities.contains(Modality.IMAGE)) {
@@ -283,7 +283,7 @@ class ChatCompletionsAPI(
                     }
 
                     "dashscope.aliyuncs.com" -> {
-                        // 阿里云百炼
+                        // Alibaba Cloud Bailian
                         // https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions
                         if (level != ReasoningLevel.AUTO) {
                             put("reasoning_effort", level.effort)
@@ -291,18 +291,18 @@ class ChatCompletionsAPI(
                     }
 
                     "ark.cn-beijing.volces.com" -> {
-                        // 豆包 (火山)
+                        // Doubao (Volcengine)
                         put("thinking", buildJsonObject {
                             put("type", if (!level.isEnabled) "disabled" else "enabled")
                         })
                     }
 
                     "api.mistral.ai" -> {
-                        // Mistral 不支持
+                        // Mistral does not support it
                     }
 
                     "chat.intern-ai.org.cn" -> {
-                        // 书生
+                        // InternLM
                         // https://internlm.intern-ai.org.cn/api/document?lang=zh
                         put("thinking_mode", level.isEnabled)
                     }
@@ -353,7 +353,7 @@ class ChatCompletionsAPI(
                     }
 
                     "api.xiaomimimo.com", "token-plan-cn.xiaomimimo.com" -> {
-                        // 小米 MiMo
+                        // Xiaomi MiMo
                         // https://mimo.mi.com/docs/zh-CN/api/chat/openai-api
                         put("thinking", buildJsonObject {
                             put("type", if (!level.isEnabled) "disabled" else "enabled")
@@ -363,8 +363,8 @@ class ChatCompletionsAPI(
                     "api.moonshot.cn" -> {
                         put("thinking", buildJsonObject {
                             put("type", if (!level.isEnabled) "disabled" else "enabled")
-                            // K2.6 的 thinking.keep 默认为 null（忽略历史思考），思考开启时
-                            // 需显式传 "all" 才是保留式思考；文档推荐与 enabled 搭配（#1586）
+                            // K2.6's thinking.keep defaults to null (ignores past thinking); when thinking is on,
+                            // "all" must be passed explicitly to keep thinking; the docs recommend pairing it with enabled (#1586)
                             if (level.isEnabled && ModelRegistry.KIMI_K2_6.match(params.model.modelId)) {
                                 put("keep", "all")
                             }
@@ -484,7 +484,7 @@ class ChatCompletionsAPI(
         for (group in groups) {
             when (group) {
                 is PartGroup.Content -> {
-                    // 从当前 group 中提取 reasoning（保持顺序）
+                    // Extract reasoning from the current group (preserving order)
                     if (includeReasoning) {
                         group.parts.filterIsInstance<UIMessagePart.Reasoning>().firstOrNull()?.let {
                             reasoningPart = it
@@ -496,7 +496,7 @@ class ChatCompletionsAPI(
                 }
 
                 is PartGroup.Tools -> {
-                    // 输出 assistant 消息（包含累积的内容 + tool_calls）
+                    // Emit the assistant message (accumulated content + tool_calls)
                     buildAssistantMessageJson(
                         contentParts = contentBuffer,
                         tools = group.tools,
@@ -506,9 +506,9 @@ class ChatCompletionsAPI(
                         add(assistantMessage)
                     }
                     contentBuffer.clear()
-                    reasoningPart = null // 清空，下一个 group 可能有新的 reasoning
+                    reasoningPart = null // Reset; the next group may have new reasoning
 
-                    // 紧跟 tool 结果消息
+                    // Followed immediately by the tool result messages
                     group.tools.forEach { tool ->
                         add(buildJsonObject {
                             put("role", "tool")
@@ -520,7 +520,7 @@ class ChatCompletionsAPI(
             }
         }
 
-        // 输出剩余内容
+        // Emit the remaining content
         if (contentBuffer.isNotEmpty() || reasoningPart != null) {
             buildAssistantMessageJson(
                 contentParts = contentBuffer,
@@ -614,7 +614,7 @@ class ChatCompletionsAPI(
                             put("type", "function")
                             put("function", buildJsonObject {
                                 put("name", tool.toolName)
-                                // 使用 inputAsJson() 归一化，避免流式中断导致的残缺 JSON 被发送
+                                // Normalize with inputAsJson() so truncated JSON from an interrupted stream is never sent
                                 put("arguments", tool.inputAsJson().toString())
                             })
                         })
@@ -665,7 +665,7 @@ class ChatCompletionsAPI(
     }
 
     private fun UIMessagePart.Tool.toToolResultContent(supportInputModalities: List<Modality>): JsonElement {
-        // 只考虑文字和图片;只有模型支持图片输入时,图片才作为多模态内容回传,否则以文本占位,避免发给不支持的模型报错
+        // Only text and images are considered; images are sent back as multimodal content only when the model supports image input, otherwise a text placeholder is used so unsupported models don't error
         val supportsImageInput = Modality.IMAGE in supportInputModalities
         val hasImageToSend = output.any { it is UIMessagePart.Image && supportsImageInput }
         return if (!hasImageToSend) {
@@ -716,13 +716,13 @@ class ChatCompletionsAPI(
             jsonObject["role"]?.jsonPrimitive?.contentOrNull?.uppercase() ?: "ASSISTANT"
         )
 
-        // 也许支持其他模态的输出content?
+        // Maybe other output modalities are supported in content?
         val content = jsonObject["content"]?.jsonPrimitiveOrNull?.contentOrNull ?: ""
         val reasoning = jsonObject["reasoning_content"]?.jsonPrimitiveOrNull?.contentOrNull
             ?: jsonObject["reasoning"]?.jsonPrimitiveOrNull?.contentOrNull
             ?: jsonObject["content"]?.takeIf { it is JsonArray }?.let { arr ->
-                // Mistral接口
-                // {"id":"","object":"chat.completion.chunk","created":1772351733,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"好的"}]}]},"finish_reason":null}]}
+                // Mistral API
+                // {"id":"","object":"chat.completion.chunk","created":1772351733,"model":"magistral-medium-2509","choices":[{"index":0,"delta":{"content":[{"type":"thinking","thinking":[{"type":"text","text":"OK"}]}]},"finish_reason":null}]}
                 arr.jsonArrayOrNull?.getOrNull(0)?.jsonObject?.get("thinking")?.jsonArrayOrNull?.getOrNull(0)?.jsonObjectOrNull?.get(
                     "text"
                 )?.jsonPrimitiveOrNull?.contentOrNull
@@ -806,8 +806,8 @@ class ChatCompletionsAPI(
             promptTokens = jsonObject["prompt_tokens"]?.jsonPrimitive?.intOrNull ?: 0,
             completionTokens = jsonObject["completion_tokens"]?.jsonPrimitive?.intOrNull ?: 0,
             totalTokens = jsonObject["total_tokens"]?.jsonPrimitive?.intOrNull ?: 0,
-            // 各 provider 汇报缓存命中的字段形状不统一，按方言兜底解析（#1576）：
-            // OpenAI 嵌套 -> Moonshot 顶层 cached_tokens -> DeepSeek prompt_cache_hit_tokens
+            // Providers report cache hits in different shapes, so fall back through the dialects (#1576):
+            // OpenAI nested -> Moonshot top-level cached_tokens -> DeepSeek prompt_cache_hit_tokens
             cachedTokens = jsonObject["prompt_tokens_details"]?.jsonObjectOrNull?.get("cached_tokens")?.jsonPrimitive?.intOrNull
                 ?: jsonObject["cached_tokens"]?.jsonPrimitive?.intOrNull
                 ?: jsonObject["prompt_cache_hit_tokens"]?.jsonPrimitive?.intOrNull

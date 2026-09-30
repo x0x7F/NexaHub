@@ -23,10 +23,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.Base64
 import java.util.concurrent.TimeUnit
 
-// MiMo 流式音频按文档示例使用 24kHz PCM16LE
+// MiMo streaming audio uses 24kHz PCM16LE per the docs example
 private const val MIMO_SAMPLE_RATE = 24000
 private val JSON_MEDIA_TYPE = "application/json".toMediaType()
-// 只关心 delta.audio.data 其余字段忽略
+// Only delta.audio.data matters; other fields are ignored
 private val mimoJson = Json { ignoreUnknownKeys = true }
 
 @Serializable
@@ -51,12 +51,12 @@ private data class MiMoAudio(
 
 internal fun decodeMiMoAudioData(data: String): ByteArray? {
     val payload = data.trim()
-    // [DONE] 表示流结束 不输出音频
+    // [DONE] marks the end of the stream and produces no audio
     if (payload == "[DONE]") return null
-    // 非 [DONE] 的 data 视为 JSON 片段 解析失败直接上抛
+    // data other than [DONE] is treated as a JSON fragment; parse failures are rethrown
     val chunk = mimoJson.decodeFromString<MiMoChunk>(payload)
     val encoded = chunk.choices.firstOrNull()?.delta?.audio?.data ?: return null
-    // 空字符串视为无音频片段
+    // An empty string counts as no audio fragment
     if (encoded.isBlank()) return null
     return Base64.getDecoder().decode(encoded)
 }
@@ -66,7 +66,7 @@ internal class MiMoSseProcessor(
     private val voice: String
 ) {
     private var hasAudio = false
-    // metadata 只构造一次 贯穿整个流
+    // metadata is built once and used for the whole stream
     private val metadata = mapOf(
         "provider" to "mimo",
         "model" to model,
@@ -77,7 +77,7 @@ internal class MiMoSseProcessor(
         return when (event) {
             is SseEvent.Open -> null
             is SseEvent.Event -> {
-                // 只处理包含 audio.data 的增量事件 其他事件忽略
+                // Only handle delta events containing audio.data; ignore other events
                 val pcmData = decodeMiMoAudioData(event.data) ?: return null
                 hasAudio = true
                 AudioChunk(
@@ -89,11 +89,11 @@ internal class MiMoSseProcessor(
             }
 
             is SseEvent.Closed -> {
-                // 如果整段流没有任何音频片段 直接报错
+                // If the whole stream had no audio fragments, fail
                 if (!hasAudio) {
                     throw IllegalStateException("MiMo TTS returned no audio chunks")
                 }
-                // 流关闭时补一个终结 chunk 便于播放器收尾
+                // Add a terminating chunk when the stream closes so the player can finish up
                 AudioChunk(
                     data = byteArrayOf(),
                     format = AudioFormat.PCM,
@@ -123,8 +123,8 @@ class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
         .readTimeout(120, TimeUnit.SECONDS)
         .build()
 
-    // MiMo 支持在朗读文本中嵌入风格/音频标签控制语气与情感
-    // 官方文档: https://xiaomimimo.com (音频标签控制)
+    // MiMo supports embedding style/audio tags in the spoken text to control tone and emotion
+    // Official docs: https://xiaomimimo.com (audio tag control)
     override val promptGuidance: String = """
         The active text-to-speech engine (MiMo) supports emotion and style control via embedded tags.
         When you call the text_to_speech tool, you MAY enrich the "text" argument with these tags to make the speech more expressive.
@@ -142,7 +142,7 @@ class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
         - Do not use markdown emphasis (*, _) — it will be stripped.
         - Use tags naturally and sparingly; don't over-annotate.
 
-        Example text argument: (磁性)夜已经深了[叹气]城市还在呼吸。我是今晚陪你的人。
+        Example text argument: (磁性)It's late at night[叹气]and the city is still breathing. I'm the one keeping you company tonight.
     """.trimIndent()
 
     override fun generateSpeech(
@@ -150,7 +150,7 @@ class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
         providerSetting: TTSProviderSetting.MiMo,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
-        // OpenAI 兼容的 chat/completions SSE 流式返回 音频增量在 delta.audio.data
+        // OpenAI-compatible chat/completions SSE streaming; audio deltas are in delta.audio.data
         val requestBody = buildJsonObject {
             put("model", providerSetting.model)
             put("messages", buildJsonArray {
@@ -166,13 +166,13 @@ class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
             put("stream", true)
         }
 
-        // baseUrl 允许用户在设置页自定义 这里直接拼接路径
+        // baseUrl can be customized by the user in settings, so the path is appended directly here
         val httpRequest = Request.Builder()
             .url("${providerSetting.baseUrl}/chat/completions")
-            // MiMo 使用 api-key 头传 token
+            // MiMo passes the token in the api-key header
             .addHeader("api-key", providerSetting.apiKey)
             .addHeader("Content-Type", "application/json")
-            // JsonObject 的 toString 会输出 JSON 字符串
+            // JsonObject's toString outputs a JSON string
             .post(requestBody.toString().toRequestBody(JSON_MEDIA_TYPE))
             .build()
 

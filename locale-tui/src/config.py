@@ -15,7 +15,7 @@ class LanguageConfig:
     code: str
     name: str
     is_source: bool = False
-    # 术语表：英文术语 -> 目标语言译法，翻译时注入 prompt
+    # Glossary: English term -> target language rendering, injected into the prompt when translating
     glossary: dict[str, str] = field(default_factory=dict)
 
 

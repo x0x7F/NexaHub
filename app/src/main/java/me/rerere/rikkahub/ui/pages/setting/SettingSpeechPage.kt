@@ -692,7 +692,7 @@ private fun TTSProviderItem(
                             is TTSProviderSetting.Step -> "Step"
                             is TTSProviderSetting.ElevenLabs -> "ElevenLabs"
                             is TTSProviderSetting.FishAudio -> "Fish Audio"
-                            is TTSProviderSetting.Volcengine -> "火山引擎"
+                            is TTSProviderSetting.Volcengine -> "Volcengine"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -722,14 +722,14 @@ private fun TTSProviderItem(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 状态标签
+                    // Status tag
                     Tag(type = TagType.SUCCESS) {
                         Text(stringResource(R.string.setting_tts_page_selected))
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    // TTS测试播放按钮
+                    // TTS test playback button
                     if (isAvailable) {
                         val testText = stringResource(R.string.setting_tts_page_test_text)
                         IconButton(

@@ -84,7 +84,7 @@ fun ColumnScope.ChatMessageActionButtons(
 
     LaunchedEffect(isPendingDelete) {
         if (isPendingDelete) {
-            delay(3000) // 3秒后自动取消
+            delay(3000) // Auto-cancel after 3 seconds
             isPendingDelete = false
         }
     }

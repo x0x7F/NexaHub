@@ -1,4 +1,4 @@
-/* TODO: 校对一遍这些边界情况 */
+/* TODO: review these edge cases */
 @font-face {
   font-family: "Rikka";
   src: url(data:font/woff2;base64,d09GMgABAAAAAA) format("woff2");

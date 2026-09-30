@@ -95,7 +95,7 @@ class MessageQueue {
                 ) else it
             },
         )
-        // 取消编辑只释放占位，不能清理原附件。
+        // Cancelling an edit only releases the placeholder and must not clean up the original attachments.
         return previous.takeIf { parts != null }
     }
 

@@ -22,7 +22,7 @@ import java.util.Base64
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-/** OAuth 2.x 的通用 HTTP、PKCE、授权码和刷新令牌客户端。 */
+/** Generic OAuth 2.x client for HTTP, PKCE, authorization codes and refresh tokens. */
 class OAuthHttpClient(
     private val httpClient: OkHttpClient,
 ) {
@@ -33,7 +33,7 @@ class OAuthHttpClient(
         explicitNulls = false
     }
 
-    /** RFC 7591 动态客户端注册请求。 */
+    /** RFC 7591 dynamic client registration request. */
     @Serializable
     data class ClientRegistrationRequest(
         @SerialName("client_name") val clientName: String,
@@ -123,7 +123,7 @@ class OAuthHttpClient(
 
     fun buildAuthorizationUrl(request: AuthorizationRequest): String {
         val base = request.authorizationEndpoint.toHttpUrlOrNull()
-            ?: error("非法的授权端点: ${request.authorizationEndpoint}")
+            ?: error("Invalid authorization endpoint: ${request.authorizationEndpoint}")
         return base.newBuilder()
             .addQueryParameter("response_type", "code")
             .addQueryParameter("client_id", request.clientId)

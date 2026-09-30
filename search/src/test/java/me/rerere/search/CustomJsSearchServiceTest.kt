@@ -28,15 +28,15 @@ class CustomJsSearchServiceTest {
             assertEquals("POST", request.method)
             assertEquals("token", request.header("X-Test"))
             val body = Buffer().also { request.body!!.writeTo(it) }.readUtf8()
-            assertEquals("{\"query\":\"你好\\n\\\"\\u0001😀\",\"limit\":3}", body)
+            assertEquals("{\"query\":\"héllo\\n\\\"\\u0001😀\",\"limit\":3}", body)
             Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
                 .code(200).message("OK")
-                .body("""{"results":[{"title":"结果😀","url":"https://example.com","snippet":"内容"}]}""".toResponseBody())
+                .body("""{"results":[{"title":"résultat😀","url":"https://example.com","snippet":"contenu"}]}""".toResponseBody())
                 .build()
         }.build()
         try {
             val result = CustomJsSearchService.search(
-                buildJsonObject { put("query", "你好\n\"\u0001😀") },
+                buildJsonObject { put("query", "héllo\n\"\u0001😀") },
                 SearchCommonOptions(resultSize = 3),
                 SearchServiceOptions.CustomJsOptions(searchScript = """
                     function search(query, resultSize) {
@@ -50,8 +50,8 @@ class CustomJsSearchServiceTest {
                     }
                 """.trimIndent()),
             ).getOrThrow()
-            assertEquals("结果😀", result.items.single().title)
-            assertEquals("内容", result.items.single().text)
+            assertEquals("résultat😀", result.items.single().title)
+            assertEquals("contenu", result.items.single().text)
         } finally {
             SearchService.httpClient = previousClient
         }

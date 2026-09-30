@@ -29,7 +29,7 @@ operator fun PaddingValues.plus(other: PaddingValues): PaddingValues {
     )
 }
 
-// 用于未开启 autoMirror、但在当前语境下有方向含义的图标
+// For icons without autoMirror that still have a directional meaning in the current context
 @Composable
 fun Modifier.mirrorForRtl(): Modifier =
     if (LocalLayoutDirection.current == LayoutDirection.Rtl) scale(scaleX = -1f, scaleY = 1f) else this
@@ -49,7 +49,7 @@ fun Dp.toSp(): TextUnit = with(LocalDensity.current) {
 
 @Composable
 fun TextUnit.toDp(): Dp = with(LocalDensity.current) {
-    // Density.toDp(TextUnit) 仅支持 Sp 单位，Em/Unspecified 会抛 "Only Sp can convert to Px"
+    // Density.toDp(TextUnit) only supports Sp; Em/Unspecified throw "Only Sp can convert to Px"
     if (this@toDp.isSp) this@toDp.toDp() else 0.dp
 }
 

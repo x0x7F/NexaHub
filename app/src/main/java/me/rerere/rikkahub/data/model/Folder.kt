@@ -4,7 +4,7 @@ import java.time.Instant
 import kotlin.uuid.Uuid
 
 /**
- * 会话文件夹（助手内分组）。
+ * Conversation folder (grouping within an assistant).
  */
 data class Folder(
     val id: Uuid = Uuid.random(),

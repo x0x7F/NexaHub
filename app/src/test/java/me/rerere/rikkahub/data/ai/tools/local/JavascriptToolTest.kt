@@ -24,8 +24,8 @@ class JavascriptToolTest {
         assertEquals("{\"value\":42}", evaluate("({value: 42})")["result"]?.jsonPrimitive?.content)
         assertEquals("[1,2]", evaluate("[1, 2]")["result"]?.jsonPrimitive?.content)
         assertEquals(JsonNull, evaluate("undefined")["result"])
-        val output = evaluate("console.log('你好', 42); console.warn('注意'); '😀'")
-        assertEquals("[LOG] 你好 42\n[WARN] 注意", output["logs"]?.jsonPrimitive?.content)
+        val output = evaluate("console.log('héllo', 42); console.warn('caution'); '😀'")
+        assertEquals("[LOG] héllo 42\n[WARN] caution", output["logs"]?.jsonPrimitive?.content)
         assertEquals("😀", output["result"]?.jsonPrimitive?.content)
     }
 

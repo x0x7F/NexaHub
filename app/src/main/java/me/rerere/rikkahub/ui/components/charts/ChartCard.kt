@@ -46,7 +46,7 @@ import me.rerere.rikkahub.R
 enum class ChartDisplayMode { Chart, Table }
 
 /**
- * 图表卡片: 标题、图表/表格切换、绘图区与图例
+ * Chart card: title, chart/table toggle, plot area and legend
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -197,7 +197,7 @@ private fun ChartModeButton(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    // 不用 Surface(onClick): 它会强制 48dp 最小触控尺寸, 把紧凑的切换条撑大
+    // Don't use Surface(onClick): it forces a 48dp minimum touch target, which would enlarge the compact toggle bar
     val shape = RoundedCornerShape(6.dp)
     Box(
         modifier = Modifier
@@ -227,12 +227,12 @@ private fun ChartCardBarPreview() {
         ChartCard(
             spec = ChartSpec(
                 style = ChartStyle.Bar,
-                title = "示例：各语言项目的平均构建时间（虚构数据）",
+                title = "Example: average build time of projects by language (fictional data)",
                 xAxis = ChartAxis(data = listOf("Go", "Rust", "TypeScript", "Kotlin", "C++")),
-                yAxis = ChartAxis(title = "秒"),
+                yAxis = ChartAxis(title = "Seconds"),
                 series = listOf(
-                    ChartSeries(name = "冷构建", values = listOf(12.0, 85.0, 20.0, 64.0, 110.0)),
-                    ChartSeries(name = "增量构建", values = listOf(2.0, 9.0, 4.0, 11.0, 15.0)),
+                    ChartSeries(name = "Cold build", values = listOf(12.0, 85.0, 20.0, 64.0, 110.0)),
+                    ChartSeries(name = "Incremental build", values = listOf(2.0, 9.0, 4.0, 11.0, 15.0)),
                 ),
             ),
             modifier = Modifier.padding(16.dp),
@@ -247,9 +247,9 @@ private fun ChartCardLinePreview() {
         ChartCard(
             spec = ChartSpec(
                 style = ChartStyle.Line,
-                title = "月活跃用户",
-                xAxis = ChartAxis(data = listOf("1月", "2月", "3月", "4月", "5月", "6月")),
-                yAxis = ChartAxis(title = "万人", format = ".1f"),
+                title = "Monthly active users",
+                xAxis = ChartAxis(data = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun")),
+                yAxis = ChartAxis(title = "Users (10k)", format = ".1f"),
                 series = listOf(
                     ChartSeries(name = "Android", values = listOf(12.5, 14.1, 15.8, 15.2, 17.9, 19.4)),
                     ChartSeries(name = "iOS", values = listOf(8.2, 8.9, 9.4, 10.8, 11.1, 12.6)),
@@ -267,12 +267,12 @@ private fun ChartCardScatterPreview() {
         ChartCard(
             spec = ChartSpec(
                 style = ChartStyle.Scatter,
-                title = "身高与体重",
-                xAxis = ChartAxis(title = "身高 (cm)"),
-                yAxis = ChartAxis(title = "体重 (kg)"),
+                title = "Height and weight",
+                xAxis = ChartAxis(title = "Height (cm)"),
+                yAxis = ChartAxis(title = "Weight (kg)"),
                 series = listOf(
                     ChartSeries(
-                        name = "样本",
+                        name = "Samples",
                         points = listOf(
                             ChartPoint(160.0, 52.0), ChartPoint(165.0, 58.0), ChartPoint(170.0, 63.0),
                             ChartPoint(175.0, 70.0), ChartPoint(180.0, 76.0), ChartPoint(172.0, 61.0),

@@ -271,7 +271,7 @@ class GenerationLoop(
                                 output = maybeTruncateToolOutput(tool.toolCallId, result, hasShellAccess)
                             )
                         }.onFailure {
-                            // 取消必须向上传播，否则停止生成会被误报为工具执行错误
+                            // Cancellation must propagate, otherwise stopping generation would be reported as a tool execution error
                             if (it is CancellationException) throw it
                             it.printStackTrace()
                             executedTools += tool.copy(
@@ -355,12 +355,12 @@ class GenerationLoop(
                     append(effectiveSystemPrompt)
                 }
 
-                // 记忆
+                // Memory
                 if (assistant.enableMemory) {
                     appendLine()
                     append(buildMemoryPrompt(memories = memories))
                 }
-                // 工具prompt
+                // Tool prompts
                 tools.forEach { tool ->
                     appendLine()
                     append(tool.systemPrompt(model, messages))
@@ -402,9 +402,9 @@ class GenerationLoop(
         )
         try {
             if (stream) {
-                // 每次重试都从本次模型调用开始前的消息快照重新合并，避免将重试响应
-                // 追加到已经展示的半截回复后面。预先创建助手消息可让所有尝试复用同一 ID，
-                // ChatService 因而会覆盖当前分支，而不是创建新的候选消息。
+                // Each retry re-merges from the message snapshot taken before this model call, so the retried response
+                // isn't appended after the half-finished reply already shown. Creating the assistant message up front lets every attempt reuse the same ID,
+                // so ChatService overwrites the current branch instead of creating a new candidate message.
                 val responseBaseMessages =
                     if (messages.lastOrNull()?.role == MessageRole.ASSISTANT) {
                         messages
@@ -435,7 +435,7 @@ class GenerationLoop(
                             } catch (error: CancellationException) {
                                 throw error
                             } catch (error: Throwable) {
-                                // 下游消息转换或 UI 更新失败不属于网络故障，不能重放模型请求。
+                                // Failures in downstream message transformation or UI updates are not network faults, so the model request must not be replayed.
                                 throw StreamChunkHandlingException(error)
                             }
                         }
@@ -498,8 +498,8 @@ class GenerationLoop(
         processingStatus: MutableStateFlow<String?>,
         enabled: Boolean,
     ): Int {
-        // 用户主动停止生成时，底层连接也可能以 IOException("canceled") 收尾；
-        // 先检查协程状态，确保取消不会被当作网络波动重新拉起。
+        // When the user stops generation, the underlying connection may also end with IOException("canceled");
+        // check the coroutine state first so a cancellation isn't restarted as a network hiccup.
         currentCoroutineContext().ensureActive()
         if (!enabled || error !is IOException || retryCount >= MAX_PROVIDER_NETWORK_RETRIES) {
             throw error

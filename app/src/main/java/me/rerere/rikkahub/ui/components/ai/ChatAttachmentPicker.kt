@@ -115,7 +115,7 @@ internal fun rememberChatAttachmentPickerActions(
                     val tempFile = File(context.appTempFolder, "pick_temp_${System.currentTimeMillis()}.jpg")
                     runCatching {
                         val source = selectedUris.first()
-                        // HEIF/HEIC（尤其 HDR HEIF）交给 UCrop 前先解码转为 JPEG，规避裁剪解码失败
+                        // Decode HEIF/HEIC (especially HDR HEIF) to JPEG before handing it to UCrop, to avoid crop decoding failures
                         val converted = ImageUtils.isHeifImage(context, source) &&
                             ImageUtils.convertHeifToJpeg(context, source, tempFile)
                         if (!converted) {

@@ -178,7 +178,7 @@
         import markdownItTaskLists from 'https://esm.sh/markdown-it-task-lists@2.1.1';
 
         import katex from 'https://esm.sh/katex@0.16.8';
-        // mhchem 扩展: 支持 \ce{} 等化学公式语法
+        // mhchem extension: supports chemical formula syntax such as \ce{}
         import 'https://esm.sh/katex@0.16.8/dist/contrib/mhchem.mjs';
         import hljs from 'https://esm.sh/highlight.js@11.9.0';
         import mermaid from 'https://esm.sh/mermaid@10.6.1';
@@ -206,8 +206,8 @@
         });
 
         // Add plugins
-        // 传入已加载 mhchem 扩展的 katex 实例, 否则插件会使用其内部自带的另一个 katex 实例,
-        // 导致 \ce 等 mhchem 语法无法识别 (Undefined control sequence: \ce)
+        // Pass in the katex instance that has the mhchem extension loaded, otherwise the plugin uses its own bundled katex instance,
+        // and mhchem syntax such as \ce isn't recognized (Undefined control sequence: \ce)
         md.use(vscodemarkdownItKatex, { katex });
 
         md.use(markdownItTaskLists, {
@@ -308,7 +308,7 @@
         renderMarkdown();
     </script>
     <script nomodule>
-        alert('您的系统WebView不支持 ES Modules，请升级WebView或者系统!');
+        alert('Your system WebView does not support ES Modules. Please update WebView or your system.');
     </script>
 </body>
 </html>

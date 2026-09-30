@@ -18,7 +18,7 @@
   </style>
 </head>
 <body>
-  <!-- 会话列表 -->
+  <!-- conversation list -->
   <div id="root" class="app dark" data-theme='dark'>
     <img src="logo.svg" alt="logo" width=48 height=48 />
     <p>Hello &amp; welcome &#128512; &#x1f600;</p>

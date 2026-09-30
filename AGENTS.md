@@ -9,9 +9,9 @@ Built with Jetpack Compose, Kotlin, and follows Material Design 3 principles.
 ## Build, Test, and Development Commands
 
 ```bash
-./gradlew assembleDebug          # 构建 Debug APK
-./gradlew test                   # 运行所有模块的 JVM 单元测试
-./gradlew lint                   # 运行 Android Lint
+./gradlew assembleDebug          # Build the debug APK
+./gradlew test                   # Run JVM unit tests for all modules
+./gradlew lint                   # Run Android Lint
 ```
 
 ## Module Structure

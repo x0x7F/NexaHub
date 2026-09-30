@@ -13,36 +13,36 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 
 /**
- * 创建并记住权限状态
+ * Create and remember a permission state
  *
- * @param permissions 权限信息集合
- * @return PermissionState 权限状态管理对象
+ * @param permissions the set of permission infos
+ * @return the PermissionState holder
  *
- * 使用示例:
+ * Example:
  * ```
  * val permissionState = rememberPermissionState(
  *     permissions = setOf(
  *         PermissionInfo(
  *             permission = Manifest.permission.CAMERA,
- *             usage = { Text("需要相机权限来拍照") },
+ *             usage = { Text("Camera permission is needed to take photos") },
  *             required = true
  *         ),
  *         PermissionInfo(
  *             permission = Manifest.permission.RECORD_AUDIO,
- *             usage = { Text("需要录音权限来录制视频") },
+ *             usage = { Text("Microphone permission is needed to record video") },
  *             required = false
  *         )
  *     )
  * )
  *
- * // 请求权限
+ * // Request permissions
  * Button(onClick = { permissionState.requestPermissions() }) {
- *     Text("请求权限")
+ *     Text("Request permissions")
  * }
  *
- * // 检查权限状态
+ * // Check the permission state
  * if (permissionState.allRequiredPermissionsGranted) {
- *     Text("所有必需权限已授权")
+ *     Text("All required permissions granted")
  * }
  * ```
  */
@@ -52,25 +52,25 @@ fun rememberPermissionState(
 ): PermissionState {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
-        ?: throw IllegalStateException("rememberPermissionState 必须在 ComponentActivity 中使用")
+        ?: throw IllegalStateException("rememberPermissionState must be used in a ComponentActivity")
 
-    // 创建权限状态对象
+    // Create the permission state object
     val permissionState = remember(permissions) {
         PermissionState(permissions, context, activity)
     }
 
-    // 多个权限请求启动器
+    // Launcher for multiple permission requests
     val multiplePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         permissionState.handlePermissionResult(results)
     }
 
-    // 单个权限请求启动器
+    // Launcher for a single permission request
     val singlePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
-        // 获取最后请求的权限（通过当前rationale权限或者denied权限推断）
+        // Get the last requested permission (inferred from the current rationale permission or denied permission)
         val lastRequestedPermission = permissionState.currentRationalePermissions.firstOrNull()?.permission
             ?: permissionState.deniedPermissions.firstOrNull()?.permission
 
@@ -79,25 +79,25 @@ fun rememberPermissionState(
         }
     }
 
-    // 设置启动器
+    // Set the launchers
     LaunchedEffect(multiplePermissionLauncher, singlePermissionLauncher) {
         permissionState.setPermissionLaunchers(multiplePermissionLauncher, singlePermissionLauncher)
     }
 
-    // 监听生命周期变化，更新权限状态
+    // Watch lifecycle changes and update the permission states
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> {
-                    // 应用从后台回到前台时强制刷新权限状态
-                    // 这里使用 refreshPermissionStates 来处理用户可能在设置中修改的权限
+                    // Force-refresh the permission states when the app returns from the background
+                    // refreshPermissionStates handles permissions the user may have changed in settings
                     permissionState.refreshPermissionStates()
                 }
 
                 Lifecycle.Event.ON_RESUME -> {
-                    // 恢复时也刷新一次，确保状态最新
+                    // Also refresh on resume to keep the state current
                     permissionState.refreshPermissionStates()
                 }
 
@@ -112,7 +112,7 @@ fun rememberPermissionState(
         }
     }
 
-    // 初始化时更新权限状态
+    // Update the permission states on initialization
     LaunchedEffect(Unit) {
         permissionState.updatePermissionStates()
     }
@@ -121,12 +121,12 @@ fun rememberPermissionState(
 }
 
 /**
- * 创建并记住单个权限状态
+ * Create and remember a single permission state
  *
- * @param permission 权限字符串
- * @param usage 权限使用说明
- * @param required 是否为必需权限
- * @return PermissionState 权限状态管理对象
+ * @param permission the permission string
+ * @param usage the permission usage explanation
+ * @param required whether the permission is required
+ * @return the PermissionState holder
  */
 @Composable
 fun rememberPermissionState(

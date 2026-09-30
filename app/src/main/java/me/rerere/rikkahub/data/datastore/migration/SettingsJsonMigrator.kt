@@ -9,35 +9,35 @@ import me.rerere.rikkahub.utils.JsonInstant
 private const val TAG = "SettingsJsonMigrator"
 
 /**
- * 对备份文件中的 settings.json 应用与 DataStore migration 相同的迁移逻辑。
+ * Applies the same migrations as the DataStore migrations to settings.json in backup files.
  *
- * DataStore migration 作用于分散的 key-value 存储，而备份文件中的 settings.json
- * 是整个 [me.rerere.rikkahub.data.datastore.Settings] 对象的序列化结果。
- * 此工具类负责在反序列化前对旧格式的 JSON 执行等价的迁移操作。
+ * DataStore migrations work on scattered key-value storage, whereas settings.json in a backup file
+ * is the serialized form of the whole [me.rerere.rikkahub.data.datastore.Settings] object.
+ * This utility performs the equivalent migrations on old-format JSON before deserialization.
  */
 object SettingsJsonMigrator {
 
     /**
-     * 对 settings JSON 字符串依次应用所有版本的迁移。
-     * 若发生异常则返回原始 JSON，不中断恢复流程。
+     * Applies the migrations of every version to the settings JSON string in order.
+     * On error, returns the original JSON so the restore isn't interrupted.
      */
     fun migrate(settingsJson: String): String {
         return runCatching {
             val root = JsonInstant.parseToJsonElement(settingsJson).jsonObject.toMutableMap()
 
-            // V1: 修复 mcpServers 中全限定类名的 type 字段
+            // V1: fix the type field with fully qualified class names in mcpServers
             root["mcpServers"]?.let { element ->
                 val migrated = migrateMcpServersJson(JsonInstant.encodeToString(element))
                 root["mcpServers"] = JsonInstant.parseToJsonElement(migrated)
             }
 
-            // V2: 修复 assistants 中 UIMessagePart 的 type 字段
+            // V2: fix the type field of UIMessagePart in assistants
             root["assistants"]?.let { element ->
                 val migrated = migrateAssistantsJson(JsonInstant.encodeToString(element))
                 root["assistants"] = JsonInstant.parseToJsonElement(migrated)
             }
 
-            // V3: 将 assistants 中内嵌的 quickMessages 提取为全局 quickMessages
+            // V3: extract the quickMessages embedded in assistants into global quickMessages
             root["assistants"]?.let { element ->
                 val (migratedAssistants, extractedQuickMessages) =
                     migrateAssistantsQuickMessages(JsonInstant.encodeToString(element))

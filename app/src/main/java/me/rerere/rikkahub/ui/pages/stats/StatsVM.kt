@@ -46,13 +46,13 @@ class StatsVM(
 
         val today = LocalDate.now()
 
-        // 热力图起始日期（52 周前的周日），格式 "yyyy-MM-dd" 直接与 JSON 中的 LocalDateTime 前缀比较
+        // Heatmap start date (the Sunday 52 weeks ago); the "yyyy-MM-dd" format is compared directly with the LocalDateTime prefix in the JSON
         val startDate = today
             .with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
             .minusWeeks(52)
             .toString()
 
-        // 基于用户消息的 createdAt 统计每日活跃消息数，SQLite 侧 GROUP BY，返回 ≤371 行
+        // Count daily active messages from the user messages' createdAt, with GROUP BY on the SQLite side, returning ≤371 rows
         val conversationsPerDay = withContext(Dispatchers.IO) {
             messageNodeDAO
                 .getMessageCountPerDay(startDate)
@@ -64,7 +64,7 @@ class StatsVM(
 
         val totalConversations = conversationDAO.countAll()
 
-        // json_each() + json_extract() 在 SQLite 侧聚合，不再加载完整 JSON 到 Kotlin
+        // json_each() + json_extract() aggregate on the SQLite side, instead of loading the full JSON into Kotlin
         val tokenStats = messageNodeDAO.getTokenStats()
 
         val launchCount = settingsStore.settingsFlow.value.launchCount

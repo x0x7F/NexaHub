@@ -108,12 +108,12 @@ fun <T> Select(
 }
 
 /**
- * 文本框 + 预设选项下拉菜单
+ * Text field + dropdown of preset options
  *
- * 刻意不使用 ExposedDropdownMenuBox: 它的 ExposedDropdownMenuPositionProvider 在
- * "菜单高度 > 可见窗口高度 - 96dp" 时会 coerceIn(min > max) 直接抛异常 (issue #1549),
- * 小屏设备上点击底部的可编辑输入框会同时弹出输入法, 极易触发。
- * 普通 DropdownMenu 的定位逻辑对这种情况有兜底, 不会崩溃。
+ * Deliberately avoids ExposedDropdownMenuBox: its ExposedDropdownMenuPositionProvider throws on
+ * coerceIn(min > max) when "menu height > visible window height - 96dp" (issue #1549),
+ * which is easy to hit on small screens, since tapping an editable field near the bottom also brings up the keyboard.
+ * The positioning logic of a plain DropdownMenu handles this case and doesn't crash.
  */
 @Composable
 fun <T> SelectTextField(
@@ -149,7 +149,7 @@ fun <T> SelectTextField(
             }
         )
 
-        // 只读时整个输入框都可点击展开, 且不会抢焦点弹出输入法
+        // When read-only, the whole field is tappable to expand, without grabbing focus and showing the keyboard
         if (readOnly) {
             Box(
                 modifier = Modifier

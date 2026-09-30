@@ -143,7 +143,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 models.mapNotNull {
                     val modelObject = it.jsonObject
 
-                    // 忽略非chat/embedding模型
+                    // Ignore non-chat/embedding models
                     val supportedGenerationMethods =
                         modelObject["supportedGenerationMethods"]!!.jsonArray
                             .map { method -> method.jsonPrimitive.content }
@@ -279,7 +279,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 var exception = t
 
                 t?.printStackTrace()
-                println("[onFailure] 发生错误: ${t?.message}")
+                println("[onFailure] error: ${t?.message}")
 
                 try {
                     if (t == null && response != null) {
@@ -306,7 +306,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
             }
 
             override fun onClosed(eventSource: EventSource) {
-                println("[onClosed] 连接已关闭")
+                println("[onClosed] connection closed")
                 sendChunks(decoder.onClosed())
                 close()
             }
@@ -316,10 +316,10 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 .newEventSource(request, listener)
 
         awaitClose {
-            println("[awaitClose] 关闭eventSource")
+            println("[awaitClose] closing eventSource")
             eventSource.cancel()
         }
-        // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
+        // trySend silently drops deltas when the buffer is full, which drops characters mid-reply (#1295), so the buffer must be unbounded
     }.buffer(Channel.UNLIMITED).flowOn(Dispatchers.IO)
 
     private fun buildCompletionRequestBody(
@@ -360,7 +360,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                         params.model.modelId.contains(Regex("2\\.5.*pro", RegexOption.IGNORE_CASE))
 
                     when (params.reasoningLevel) {
-                        ReasoningLevel.AUTO -> {} // 自动模式，不设置参数
+                        ReasoningLevel.AUTO -> {} // Auto mode: do not set the parameter
 
                         ReasoningLevel.OFF -> {
                             if (ModelRegistry.GEMINI_3_SERIES.match(modelId = params.model.modelId)) {
@@ -483,7 +483,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
             MessageRole.USER -> "user"
             MessageRole.SYSTEM -> "system"
             MessageRole.ASSISTANT -> "model"
-            MessageRole.TOOL -> "user" // google api中, tool结果是用户role发送的
+            MessageRole.TOOL -> "user" // In the Google API, tool results are sent with the user role
         }
     }
 
@@ -630,7 +630,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 require(mime.startsWith("image/")) {
                     "Only image mime type is supported"
                 }
-                // 如果是思考过程中的草稿图，直接忽略
+                // Ignore draft images produced during thinking
                 if (thought) {
                     return UIMessagePart.Reasoning(
                         reasoning = "[Draft Image]\n",
@@ -675,17 +675,17 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 }
 
                 is PartGroup.Tools -> {
-                    // 添加 functionCall 到 parts 缓冲
+                    // Add functionCall to the parts buffer
                     group.tools.forEach { partsBuffer.add(it.toFunctionCallPart()) }
 
-                    // 输出 model 消息
+                    // Emit the model message
                     add(buildJsonObject {
                         put("role", "model")
                         putJsonArray("parts") { partsBuffer.forEach { add(it) } }
                     })
                     partsBuffer.clear()
 
-                    // 紧跟 functionResponse
+                    // Followed immediately by functionResponse
                     add(buildJsonObject {
                         put("role", "user")
                         putJsonArray("parts") {
@@ -696,7 +696,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
             }
         }
 
-        // 输出剩余内容
+        // Emit the remaining content
         if (partsBuffer.isNotEmpty()) {
             add(buildJsonObject {
                 put("role", "model")
@@ -792,30 +792,30 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                 put("name", toolName)
                 put("id", toolCallId)
 
-                // 1. 拆分出纯文本部分
+                // 1. Split out the plain-text parts
                 val textParts = output.filterIsInstance<UIMessagePart.Text>()
                 
-                // 2. 提取所有的多模态(图片/视频/音频)，并直接转为 Google 要求的格式
-                // 过滤出最终包含 inlineData 的数据块
+                // 2. Extract all multimodal data (image/video/audio) and convert it to the format Google requires
+                // Keep only the chunks that end up containing inlineData
                 val mediaGoogleParts = output
                     .filter { it !is UIMessagePart.Text }
                     .mapNotNull { it.toGooglePart() }
                     .filter { it.containsKey("inlineData") } 
 
-                // 3. 构建给模型看的结构化 response 节点
+                // 3. Build the structured response node shown to the model
                 put("response", buildJsonObject {
-                    // 处理文本结果
+                    // Handle text results
                     if (textParts.isNotEmpty()) {
                         put(
                             "result", 
                             textParts.joinToString("\n") { it.text }
                         )
                     } else if (mediaGoogleParts.isEmpty()) {
-                        // 如果工具啥都没返回，给个兜底成功状态
+                        // If the tool returned nothing, fall back to a success status
                         put("result", " ")
                     }
 
-                    // 处理媒体数据（图片、音频、视频），打上 $ref 标签
+                    // Handle media data (image, audio, video) and tag it with $ref
                     mediaGoogleParts.forEachIndexed { index, _ ->
                         val refName = "media_ref_$index"
                         put(refName, buildJsonObject {
@@ -824,7 +824,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                     }
                 })
 
-                // 4. 将真实的 Base64 多媒体数据挂载到 parts 中，并建立指针绑定
+                // 4. Attach the actual Base64 media data to parts and bind the references
                 if (mediaGoogleParts.isNotEmpty()) {
                     putJsonArray("parts") {
                         mediaGoogleParts.forEachIndexed { index, googlePart ->
@@ -832,15 +832,15 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                             val inlineData = googlePart["inlineData"]!!.jsonObject
 
                             add(buildJsonObject {
-                                // 重新组装 inlineData，并在内部注入 displayName
+                                // Rebuild inlineData and inject displayName into it
                                 put("inlineData", buildJsonObject {
-                                    // 复制原有的 mimeType 和 data
+                                    // Copy the original mimeType and data
                                     inlineData.forEach { (k, v) -> put(k, v) }
-                                    // 添加能够让 $ref 认出它的唯一名称
+                                    // Add a unique name so $ref can resolve it
                                     put("displayName", refName)
                                 })
                                 
-                                // 保留可能存在的其他字段
+                                // Keep any other fields that may exist
                                 googlePart.forEach { (k, v) ->
                                     if (k != "inlineData") put(k, v)
                                 }

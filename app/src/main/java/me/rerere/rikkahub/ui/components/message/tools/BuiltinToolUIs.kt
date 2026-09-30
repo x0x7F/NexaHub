@@ -88,7 +88,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * 记忆工具: 按 action 区分标题/图标, 摘要显示记忆内容, 详情附带删除按钮
+ * Memory tool: title/icon depend on the action, the summary shows the memory content, and the details include a delete button
  */
 object MemoryToolUI : ToolUIRenderer {
     private const val ACTION_CREATE = "create"
@@ -162,7 +162,7 @@ object MemoryToolUI : ToolUIRenderer {
 }
 
 /**
- * 网络搜索: 标题带查询词, 摘要显示 answer 与结果数, 详情为结果列表
+ * Web search: the title includes the query, the summary shows the answer and result count, and the details are the result list
  */
 object SearchWebToolUI : ToolUIRenderer {
     override val toolName: String = "search_web"
@@ -224,7 +224,7 @@ object SearchWebToolUI : ToolUIRenderer {
 }
 
 /**
- * 网页抓取: 摘要显示 URL, 详情为各网页的 Markdown 内容
+ * Web scraping: the summary shows the URL, and the details are the Markdown content of each page
  */
 object ScrapeWebToolUI : ToolUIRenderer {
     override val toolName: String = "scrape_web"
@@ -259,7 +259,7 @@ object ScrapeWebToolUI : ToolUIRenderer {
 }
 
 /**
- * 获取时间信息
+ * Get time info
  */
 object GetTimeInfoToolUI : ToolUIRenderer {
     override val toolName: String = "get_time_info"
@@ -272,7 +272,7 @@ object GetTimeInfoToolUI : ToolUIRenderer {
 }
 
 /**
- * 剪贴板: 按 action 区分读/写标题
+ * Clipboard: read/write title depending on the action
  */
 object ClipboardToolUI : ToolUIRenderer {
     private const val ACTION_READ = "read"
@@ -292,7 +292,7 @@ object ClipboardToolUI : ToolUIRenderer {
 }
 
 /**
- * 文本转语音: 摘要显示朗读文本与重播按钮
+ * Text to speech: the summary shows the spoken text and a replay button
  */
 object TextToSpeechToolUI : ToolUIRenderer {
     override val toolName: String = "text_to_speech"
@@ -343,7 +343,7 @@ object TextToSpeechToolUI : ToolUIRenderer {
 }
 
 /**
- * 技能调用: 标题显示技能名与路径
+ * Skill call: the title shows the skill name and path
  */
 object UseSkillToolUI : ToolUIRenderer {
     override val toolName: String = "use_skill"
@@ -359,7 +359,7 @@ object UseSkillToolUI : ToolUIRenderer {
 }
 
 /**
- * 最近聊天: 标题固定, 摘要列出最近对话的标题
+ * Recent chats: fixed title, the summary lists the titles of recent conversations
  */
 object RecentChatsToolUI : ToolUIRenderer {
     override val toolName: String = "recent_chats"
@@ -391,7 +391,7 @@ object RecentChatsToolUI : ToolUIRenderer {
 }
 
 /**
- * 对话历史搜索: 标题带查询词, 摘要显示命中数
+ * Conversation history search: the title includes the query, the summary shows the hit count
  */
 object ConversationSearchToolUI : ToolUIRenderer {
     override val toolName: String = "conversation_search"
@@ -422,8 +422,8 @@ object ConversationSearchToolUI : ToolUIRenderer {
 }
 
 /**
- * 屏幕使用时间: 摘要显示总时长与用时最多的应用, 详情为按时长排序的应用列表 (带占比条);
- * 无权限时回退到默认 JSON 详情
+ * Screen time: the summary shows the total time and the most-used apps, the details are the apps sorted by time (with share bars);
+ * falls back to the default JSON details without permission
  */
 object GetScreenTimeToolUI : ToolUIRenderer {
     private const val SUMMARY_MAX_APPS = 3
@@ -658,11 +658,11 @@ private fun ScreenTimePreview(content: JsonElement, apps: List<JsonElement>) {
     }
 }
 
-/** 读取单个应用条目的前台时长 (毫秒) */
+/** Read the foreground time (ms) of a single app entry */
 private fun JsonElement.appMs(): Long =
     jsonObjectOrNull?.get("total_ms")?.jsonPrimitiveOrNull?.longOrNull ?: 0
 
-/** 读取单个应用条目的前台时长 (分钟) */
+/** Read the foreground time (minutes) of a single app entry */
 private fun JsonElement.appMinutes(): Long =
     jsonObjectOrNull?.get("total_minutes")?.jsonPrimitiveOrNull?.longOrNull ?: (appMs() / 60000)
 
@@ -670,10 +670,10 @@ private val SCREEN_TIME_RANGE_FORMATTER: DateTimeFormatter =
     DateTimeFormatter.ofPattern("MM-dd HH:mm")
 
 /**
- * 将工具返回的 ISO 时间字符串格式化为 "MM-dd HH:mm", 解析失败时原样返回.
+ * Format an ISO time string returned by a tool as "MM-dd HH:mm", returning it unchanged if parsing fails.
  *
- * 工具用 ZonedDateTime.toString() 输出, 区域 ID 时会带 "[Asia/Shanghai]" 后缀,
- * 故优先用 ZonedDateTime.parse, 再回退到 offset / 本地日期时间.
+ * The tool outputs ZonedDateTime.toString(), which adds a "[Asia/Shanghai]"-style suffix for region IDs,
+ * so ZonedDateTime.parse is tried first, then offset / local date-time.
  */
 private fun formatRangeTime(iso: String): String = runCatching {
     ZonedDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
@@ -683,7 +683,7 @@ private fun formatRangeTime(iso: String): String = runCatching {
     LocalDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
 }.getOrDefault(iso)
 
-/** 将分钟数格式化为 "Xh Ym" / "Xh" / "Ym" */
+/** Format minutes as "Xh Ym" / "Xh" / "Ym" */
 private fun formatMinutes(minutes: Long): String {
     val h = minutes / 60
     val m = minutes % 60

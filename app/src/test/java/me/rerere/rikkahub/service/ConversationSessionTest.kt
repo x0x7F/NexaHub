@@ -130,7 +130,7 @@ class ConversationSessionTest {
         val other = ConversationSession(otherId, Conversation.ofId(otherId), this, {})
         other.initialize { Conversation.ofId(otherId, assistantId = Uuid.random()) }
 
-        // Android 重新创建 ViewModel、Web 重连及再次发送都会调用初始化。
+        // Android recreating the ViewModel, Web reconnecting and sending again all call initialization.
         repeat(3) { session.initialize { error("Must not reload an active session") } }
         assertEquals(streaming, session.state.value)
         assertTrue(other.state.value.currentMessages.isEmpty())

@@ -32,32 +32,32 @@ class ChatCompletionsUsageParsingTest {
         return method.invoke(api, usage) as TokenUsage?
     }
 
-    // #1576: cached tokens 按 provider 方言兜底解析
+    // #1576: cached tokens fall back through provider dialects
     @Test
     fun `cached tokens fall back across provider dialects`() {
         fun usage(jsonStr: String) = parseTokenUsage(Json.parseToJsonElement(jsonStr).jsonObject)
 
-        // OpenAI 官方嵌套格式
+        // Official OpenAI nested format
         assertEquals(
             12,
             usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_tokens_details":{"cached_tokens":12}}""")?.cachedTokens
         )
-        // Moonshot 顶层 cached_tokens
+        // Moonshot top-level cached_tokens
         assertEquals(
             7,
             usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"cached_tokens":7}""")?.cachedTokens
         )
-        // DeepSeek 顶层 prompt_cache_hit_tokens
+        // DeepSeek top-level prompt_cache_hit_tokens
         assertEquals(
             5,
             usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_cache_hit_tokens":5,"prompt_cache_miss_tokens":3}""")?.cachedTokens
         )
-        // 嵌套字段优先于顶层兜底
+        // Nested fields take precedence over the top-level fallback
         assertEquals(
             12,
             usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2,"prompt_tokens_details":{"cached_tokens":12},"cached_tokens":7}""")?.cachedTokens
         )
-        // 都没有时为 0
+        // 0 when neither is present
         assertEquals(
             0,
             usage("""{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}""")?.cachedTokens

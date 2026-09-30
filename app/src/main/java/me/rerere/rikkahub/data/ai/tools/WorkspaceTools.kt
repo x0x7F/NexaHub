@@ -176,7 +176,7 @@ private fun createEditFileTool(
         require(oldText.isNotEmpty()) { "old_text must not be empty" }
 
         val original = workspaceRepository.readTextInRootfs(workspaceId, path)
-        // 逐级尝试 exact -> line_trimmed -> block_anchor 替换器, 见 TextReplacers.kt
+        // Try the exact -> line_trimmed -> block_anchor replacers in order, see TextReplacers.kt
         val result = try {
             replaceText(original, oldText, newText, replaceAll)
         } catch (e: IllegalArgumentException) {
@@ -193,7 +193,7 @@ private fun createEditFileTool(
                     put("sizeBytes", entry.sizeBytes)
                     put("updatedAt", entry.updatedAt)
                 }.toString(),
-                // diff 存入 metadata 供 UI 渲染 diff view, 不会随工具结果发送给 API
+                // The diff is stored in metadata for the UI's diff view and is not sent to the API with the tool result
                 metadata = diff?.let { d -> DiffMetadata(diff = d).toMetadata() },
             )
         )
@@ -278,8 +278,8 @@ private suspend fun WorkspaceRepository.readTextInRootfs(
 ): String = readRootfsBuffer(workspaceId, path).toString(Charsets.UTF_8.name())
 
 /**
- * 按 Rootfs 内绝对路径读入内存。路径映射交给 WorkspaceManager, 由它统一处理
- * /workspace、bind mount 与 Rootfs 内部路径。
+ * Read a file into memory by its absolute path inside the Rootfs. Path mapping is left to WorkspaceManager, which handles
+ * /workspace, bind mounts and paths inside the Rootfs uniformly.
  */
 private suspend fun WorkspaceRepository.readRootfsBuffer(
     workspaceId: String,
@@ -404,7 +404,7 @@ private fun kotlinx.serialization.json.JsonObject.absolutePath(name: String): St
     return path
 }
 
-// 免强制审批的可写安全区: 工作区文件目录、临时目录和技能目录
+// Writable safe zones exempt from mandatory approval: the workspace files directory, temp directory and skills directory
 private val WRITABLE_ROOT_PREFIXES = listOf("/workspace", "/tmp", "/skills")
 
 private fun kotlinx.serialization.json.JsonElement.pathOutsideWritableRoots(name: String): Boolean =

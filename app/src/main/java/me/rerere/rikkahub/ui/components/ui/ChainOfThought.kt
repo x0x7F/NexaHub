@@ -47,19 +47,19 @@ import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.rikkahub.R
 
 /**
- * 以时间线/步骤卡片的形式展示一组思考过程。
+ * Shows a set of thinking steps as a timeline of step cards.
  *
- * 适用于承载推理步骤、工具调用步骤，或两者混合的链式内容。组件支持：
- * - 在步骤较多时自动折叠，仅展示最后若干步
- * - 点击顶部控制条展开/收起全部步骤
- * - 通过 [collapsedAdaptiveWidth] 控制折叠态是否保持自适应宽度
+ * Suited to chains of reasoning steps, tool call steps, or a mix of both. The component supports:
+ * - Automatically collapsing when there are many steps, showing only the last few
+ * - Tapping the top control bar to expand/collapse all steps
+ * - Controlling whether the collapsed state keeps an adaptive width via [collapsedAdaptiveWidth]
  *
- * @param modifier 外层卡片的修饰符
- * @param cardColors 卡片配色
- * @param steps 需要渲染的步骤数据列表
- * @param collapsedVisibleCount 折叠时保留可见的尾部步骤数
- * @param collapsedAdaptiveWidth 是否在折叠态下使用内容自适应宽度
- * @param content 每个步骤的具体 UI，由 [ChainOfThoughtScope] 提供步骤构建能力
+ * @param modifier modifier for the outer card
+ * @param cardColors card colors
+ * @param steps the step data to render
+ * @param collapsedVisibleCount number of trailing steps kept visible when collapsed
+ * @param collapsedAdaptiveWidth whether to use a content-adaptive width when collapsed
+ * @param content the UI of each step, with step-building provided by [ChainOfThoughtScope]
  */
 @Composable
 fun <T> ChainOfThought(
@@ -94,7 +94,7 @@ fun <T> ChainOfThought(
                 steps.takeLast(collapsedVisibleCount)
             }
 
-            // 显示展开/折叠按钮（统一在顶部）
+            // Show the expand/collapse button (always at the top)
             if (canCollapse) {
                 Row(
                     modifier = Modifier
@@ -110,7 +110,7 @@ fun <T> ChainOfThought(
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 左侧：图标区域（24.dp，和步骤图标对齐）
+                    // Left: icon area (24.dp, aligned with the step icons)
                     Box(
                         modifier = Modifier.width(24.dp),
                         contentAlignment = Alignment.Center,
@@ -123,7 +123,7 @@ fun <T> ChainOfThought(
                         )
                     }
 
-                    // 右侧：文字区域（8.dp 间距后开始，和步骤 label 对齐）
+                    // Right: text area (starts after 8.dp spacing, aligned with the step labels)
                     Text(
                         modifier = Modifier.padding(start = 8.dp),
                         text = if (expanded) {
@@ -141,8 +141,8 @@ fun <T> ChainOfThought(
             }
 
             val lineColor = MaterialTheme.colorScheme.outlineVariant
-            // 每个步骤只绘制自己的连线分段并在节点处留空，
-            // 避免使用离屏合成 + BlendMode.Clear（离屏层过大时部分设备会退化，节点区域被清成黑块）。
+            // Each step only draws its own connector segments and leaves a gap at the node,
+            // avoiding offscreen compositing + BlendMode.Clear (some devices degrade when the offscreen layer is too large, clearing the node area to a black block).
             Column {
                 visibleSteps.fastForEachIndexed { index, step ->
                     val isFirst = index == 0
@@ -162,21 +162,21 @@ fun <T> ChainOfThought(
 }
 
 /**
- * [ChainOfThought] 内部使用的步骤渲染作用域。
+ * Step rendering scope used inside [ChainOfThought].
  *
- * 通过该作用域可以声明单个步骤的图标、标题、附加信息以及可展开内容，
- * 并复用统一的时间线布局与交互行为。
+ * Through this scope you can declare a single step's icon, title, extra info and expandable content,
+ * reusing the shared timeline layout and interactions.
  */
 interface ChainOfThoughtScope {
     /**
-     * 声明一个非受控步骤，由组件内部管理展开/折叠状态。
+     * Declares an uncontrolled step whose expand/collapse state is managed by the component.
      *
-     * @param icon 步骤图标
-     * @param label 步骤标题区域
-     * @param extra 标题右侧的附加信息
-     * @param onClick 自定义点击行为；设置后优先于展开/折叠逻辑
-     * @param collapsedAdaptiveWidth 是否在折叠且内容隐藏时使用自适应宽度
-     * @param content 步骤展开后显示的内容；为 `null` 时步骤不可展开
+     * @param icon step icon
+     * @param label step title area
+     * @param extra extra info to the right of the title
+     * @param onClick custom click behavior; takes precedence over expand/collapse when set
+     * @param collapsedAdaptiveWidth whether to use an adaptive width when collapsed with the content hidden
+     * @param content content shown when the step is expanded; the step can't be expanded when `null`
      */
     @Composable
     fun ChainOfThoughtStep(
@@ -189,19 +189,19 @@ interface ChainOfThoughtScope {
     )
 
     /**
-     * 声明一个受控步骤，由外部传入展开状态。
+     * Declares a controlled step whose expanded state is passed in from outside.
      *
-     * 适合需要与外部状态联动的场景，例如“推理中预览 / 完成后收起”。
+     * Suited to cases that need to sync with external state, e.g. "preview while reasoning / collapse when done".
      *
-     * @param expanded 当前是否处于展开状态
-     * @param onExpandedChange 展开状态变化回调
-     * @param icon 步骤图标
-     * @param label 步骤标题区域
-     * @param extra 标题右侧的附加信息
-     * @param onClick 自定义点击行为；设置后优先于展开/折叠逻辑
-     * @param collapsedAdaptiveWidth 是否在折叠且内容隐藏时使用自适应宽度
-     * @param contentVisible 是否展示内容区域，可与 [expanded] 解耦
-     * @param content 步骤内容；为 `null` 时步骤不可展开
+     * @param expanded whether it's currently expanded
+     * @param onExpandedChange callback when the expanded state changes
+     * @param icon step icon
+     * @param label step title area
+     * @param extra extra info to the right of the title
+     * @param onClick custom click behavior; takes precedence over expand/collapse when set
+     * @param collapsedAdaptiveWidth whether to use an adaptive width when collapsed with the content hidden
+     * @param contentVisible whether to show the content area; can be decoupled from [expanded]
+     * @param content step content; the step can't be expanded when `null`
      */
     @Composable
     fun ControlledChainOfThoughtStep(
@@ -294,11 +294,11 @@ private class ChainOfThoughtScopeImpl(
                 }
             ),
         ) {
-            // Label 行：Icon + Label + Extra + 指示器
+            // Label row: Icon + Label + Extra + indicator
             Row(
                 modifier = Modifier
                     .drawBehind {
-                        // 节点上下的连线分段，节点（20.dp）区域留空
+                        // Connector segments above and below the node, leaving the node (20.dp) area empty
                         val x = 12.dp.toPx()
                         val centerY = size.height / 2
                         val gap = 10.dp.toPx()
@@ -388,7 +388,7 @@ private class ChainOfThoughtScopeImpl(
                     extra()
                 }
 
-                // 指示器：onClick 显示向右箭头，content 显示展开/折叠箭头
+                // Indicator: a right arrow for onClick, an expand/collapse arrow for content
                 if (onClick != null) {
                     Icon(
                         imageVector = HugeIcons.ArrowRight01,
@@ -406,7 +406,7 @@ private class ChainOfThoughtScopeImpl(
                 }
             }
 
-            // 展开内容（缩进对齐 label）
+            // Expanded content (indented to align with the label)
             if (contentVisible && hasContent) {
                 Box(
                     modifier = Modifier
@@ -440,7 +440,7 @@ private class ChainOfThoughtScopeImpl(
 @Preview(showBackground = true)
 @Composable
 private fun ChainOfThoughtPreview() {
-    // 定义步骤数据类
+    // Define the step data class
     data class StepData(
         val label: String,
         val icon: ImageVector?,
@@ -463,7 +463,7 @@ private fun ChainOfThoughtPreview() {
             Column(
                 modifier = Modifier.padding(innerPadding),
             ) {
-                // 受控状态示例
+                // Controlled state example
                 var controlledExpanded by remember { mutableStateOf(false) }
 
                 ChainOfThought(
@@ -540,7 +540,7 @@ private fun ChainOfThoughtPreview() {
                     } else null
 
                     if (step.controlled) {
-                        // 受控版本
+                        // Controlled version
                         ControlledChainOfThoughtStep(
                             expanded = controlledExpanded,
                             onExpandedChange = { controlledExpanded = it },
@@ -551,7 +551,7 @@ private fun ChainOfThoughtPreview() {
                             content = contentComposable,
                         )
                     } else {
-                        // 非受控版本
+                        // Uncontrolled version
                         ChainOfThoughtStep(
                             icon = iconComposable,
                             label = labelComposable,

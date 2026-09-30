@@ -91,15 +91,15 @@ sealed class ASRProviderSetting {
     }
 
     /**
-     * 小米 MiMo ASR (mimo-v2.5-asr)。
+     * Xiaomi MiMo ASR (mimo-v2.5-asr).
      *
-     * 与 OpenAIRealtime / DashScope / Volcengine 不同, MiMo ASR 是基于 OpenAI 兼容
-     * chat/completions 的 HTTP 一次性识别接口, 不是 WebSocket 流式接口。
-     * 客户端在录音期间按 [segmentDurationSec] 分段, 把每段 PCM 转成 WAV 后 base64
-     * 内嵌到 messages[].content[].input_audio.data 字段, POST 到
-     * {baseUrl}/chat/completions, 返回结果在 choices[0].message.content。
+     * Unlike OpenAIRealtime / DashScope / Volcengine, MiMo ASR is a one-shot HTTP recognition API based on the OpenAI-compatible
+     * chat/completions, not a WebSocket streaming API.
+     * While recording, the client splits audio into segments by [segmentDurationSec], converts each PCM segment to WAV, base64-encodes it,
+     * embeds it in the messages[].content[].input_audio.data field, and POSTs it to
+     * {baseUrl}/chat/completions; the result is in choices[0].message.content.
      *
-     * 官方文档: https://platform.xiaomimimo.com/docs/zh-CN/api/audio/Speech-Recognition
+     * Official docs: https://platform.xiaomimimo.com/docs/api/audio/Speech-Recognition
      */
     @Serializable
     @SerialName("mimo")
@@ -109,12 +109,12 @@ sealed class ASRProviderSetting {
         val apiKey: String = "",
         val baseUrl: String = "https://api.xiaomimimo.com/v1",
         val model: String = "mimo-v2.5-asr",
-        // auto | zh | en; 留空时不下发 asr_options, 服务端默认 auto
+        // auto | zh | en; when empty, asr_options isn't sent and the server defaults to auto
         val language: String = "auto",
         val sampleRate: Int = 16000,
-        // 每多少秒自动 flush 一次当前缓冲区 (上传识别)。设为 0 表示禁用自动分段,
-        // 仅在用户主动 stop() 时整体上传 (注意 MiMo 单次请求 raw 上限约 7.5MB,
-        // 16kHz/16bit/mono 下约 234 秒)。
+        // Automatically flush the current buffer (upload for recognition) every this many seconds. 0 disables automatic segmentation,
+        // uploading everything only when the user calls stop() (note that a single MiMo request is limited to about 7.5MB raw,
+        // about 234 seconds at 16kHz/16bit/mono).
         val segmentDurationSec: Int = 30,
     ) : ASRProviderSetting() {
         override fun copyProvider(
@@ -129,19 +129,19 @@ sealed class ASRProviderSetting {
     }
 
     /**
-     * 阶跃星辰 Step ASR (stepaudio-2.5-asr)。
+     * StepFun Step ASR (stepaudio-2.5-asr).
      *
-     * 与 MiMo 类似也是 HTTP 一次性提交 + 分段上传, 但有两个差异:
-     * 1) 鉴权用标准 `Authorization: Bearer` 而非 `api-key` 头
-     * 2) 服务端以 SSE 流式返回 (text/event-stream), 事件类型包括
+     * Like MiMo, it's a one-shot HTTP submission + segmented upload, with a few differences:
+     * 1) Authentication uses the standard `Authorization: Bearer` instead of an `api-key` header
+     * 2) The server responds with an SSE stream (text/event-stream), with event types including
      *    transcript.text.delta / transcript.text.done / error
-     * 3) 直接接受 PCM base64, 不需要 WAV 头封装
+     * 3) It accepts PCM base64 directly, without a WAV header
      *
-     * 客户端按 [segmentDurationSec] 切段, 每段 PCM base64 后 POST 到
-     * {baseUrl}/v1/audio/asr/sse, 流式接收 delta 拼到 partial transcript,
-     * done 时把完整段文本 append 到 completedTranscripts。
+     * The client splits by [segmentDurationSec], base64-encodes each PCM segment and POSTs it to
+     * {baseUrl}/v1/audio/asr/sse, streaming deltas into the partial transcript,
+     * and on done appends the full segment text to completedTranscripts.
      *
-     * 官方文档: https://platform.stepfun.com/docs/zh/api-reference/audio/asr-sse
+     * Official docs: https://platform.stepfun.com/docs/api-reference/audio/asr-sse
      */
     @Serializable
     @SerialName("step")
@@ -151,16 +151,16 @@ sealed class ASRProviderSetting {
         val apiKey: String = "",
         val baseUrl: String = "https://api.stepfun.com",
         val model: String = "stepaudio-2.5-asr",
-        // auto | zh | en; 留空时不下发 language 字段, 服务端默认 auto
+        // auto | zh | en; when empty, the language field isn't sent and the server defaults to auto
         val language: String = "auto",
         val sampleRate: Int = 16000,
-        // 每多少秒自动 flush 一次 (上传识别)。0 = 仅 stop() 时整体上传
+        // Automatically flush (upload for recognition) every this many seconds. 0 = upload everything only on stop()
         val segmentDurationSec: Int = 30,
-        // 逆文本归一化 (Inverse Text Normalization): 把 "三百" -> "300" 等
+        // Inverse Text Normalization: turns "three hundred" -> "300", etc.
         val enableItn: Boolean = true,
-        // 是否返回词级时间戳 (rikkahub 当前不消费时间戳, 默认关闭节省 token)
+        // Whether to return word-level timestamps (not consumed yet, off by default to save tokens)
         val enableTimestamp: Boolean = false,
-        // 热词列表, 提升专有名词/术语识别准确率
+        // Hotword list, improves recognition accuracy for proper nouns/terms
         val hotwords: List<String> = emptyList(),
     ) : ASRProviderSetting() {
         override fun copyProvider(

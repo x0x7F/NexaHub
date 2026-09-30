@@ -4,7 +4,7 @@ import me.rerere.videogen.model.VideoGenerationRequest
 import me.rerere.videogen.model.VideoGenerationTask
 
 /**
- * 视频生成供应商只负责异步任务的提交与查询，不在网络层内部隐式轮询。
+ * Video generation vendors only submit and query async tasks; they never poll implicitly inside the network layer.
  */
 interface VideoGenerationProvider<S : VideoGenerationProviderSetting> {
     val id: String

@@ -133,8 +133,8 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
     val isBigScreen =
         windowAdaptiveInfo.width > windowAdaptiveInfo.height && windowAdaptiveInfo.width >= 1100.dp
 
-    // 进入大屏（永久抽屉）模式时重置抽屉状态为关闭，
-    // 避免从横屏旋转回竖屏后，模态抽屉残留为打开状态且无法关闭（#1304）
+    // When entering large-screen (permanent drawer) mode, reset the drawer to closed,
+    // so that after rotating from landscape back to portrait the modal drawer isn't left open and impossible to close (#1304)
     LaunchedEffect(isBigScreen) {
         if (isBigScreen && drawerState.isOpen) {
             drawerState.close()
@@ -145,7 +145,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
 
     val inputState = vm.inputState
 
-    // 初始化输入状态（处理传入的 files 和 text 参数）
+    // Initialize the input state (handles the incoming files and text arguments)
     LaunchedEffect(files, text) {
         if (files.isNotEmpty()) {
             val localFiles = filesManager.createChatFilesByContents(files)
@@ -384,7 +384,7 @@ private fun ChatPageContent(
                     },
                     onSendClick = {
                         if (currentChatModel == null) {
-                            toaster.show("请先选择模型", type = ToastType.Error)
+                            toaster.show("Please select a model first", type = ToastType.Error)
                             return@ChatInput
                         }
                         if (inputState.isEditing()) {

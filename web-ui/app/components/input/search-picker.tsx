@@ -28,19 +28,18 @@ const SEARCH_TOOL_NAME = "search";
 
 const SEARCH_SERVICE_LABELS: Record<string, string> = {
   bing_local: "Bing",
-  rikkahub: "RikkaHub",
-  zhipu: "智谱",
+  zhipu: "Zhipu",
   tavily: "Tavily",
   exa: "Exa",
   searxng: "SearXNG",
   linkup: "LinkUp",
   brave: "Brave",
-  metaso: "秘塔",
+  metaso: "Metaso",
   ollama: "Ollama",
   perplexity: "Perplexity",
   firecrawl: "Firecrawl",
   jina: "Jina",
-  bocha: "博查",
+  bocha: "Bocha",
 };
 
 export interface SearchPickerButtonProps {

@@ -1,14 +1,14 @@
 name: Daily Build
 
 on:
-  # 每天 UTC 09:00、18:00 触发（北京时间 17:00、次日 02:00）
+  # Runs daily at 09:00 and 18:00 UTC
   schedule:
     - cron: '0 9,18 * * *'
-  # 也支持手动触发
+  # Can also be triggered manually
   workflow_dispatch:
 
 jobs:
-  # 检查过去 24 小时内是否有新提交，没有则跳过构建，避免重复打包
+  # Check for new commits in the last 24 hours; skip the build if there are none to avoid duplicate builds
   check:
     runs-on: ubuntu-latest
     outputs:
@@ -18,17 +18,17 @@ jobs:
       - name: Check for recent commits
         id: check
         run: |
-          # 手动触发时无条件构建
+          # Always build when triggered manually
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "should_build=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # 定时触发：仅当过去 24 小时内有新提交才构建
+          # Scheduled: only build if there were new commits in the last 24 hours
           if [ -n "$(git log --since='24 hours ago' --oneline)" ]; then
             echo "should_build=true" >> "$GITHUB_OUTPUT"
           else
             echo "should_build=false" >> "$GITHUB_OUTPUT"
-            echo "过去 24 小时无新提交，跳过构建"
+            echo "No new commits in the last 24 hours, skipping build"
           fi
 
   build:
@@ -36,13 +36,13 @@ jobs:
     if: needs.check.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # 发布 Release 需要写权限
+      contents: write   # Publishing a release needs write access
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: recursive # 拉取子模块
+          submodules: recursive # Fetch submodules
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -50,7 +50,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # web 模块的 preBuild 会执行 `pnpm run build` 构建前端，必须准备好 Node + pnpm
+      # The web module's preBuild runs `pnpm run build` to build the frontend, so Node + pnpm must be set up
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -63,7 +63,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: web-ui/pnpm-lock.yaml
 
-      # gradle 的 buildWebUi 任务只跑 build 不跑 install，需在此提前安装依赖
+      # Gradle's buildWebUi task only runs build, not install, so install dependencies here first
       - name: Install web-ui dependencies
         working-directory: web-ui
         run: pnpm install --frozen-lockfile
@@ -78,10 +78,10 @@ jobs:
 
       - name: Prepare build files
         run: |
-          # 解码base64编码的keystore文件
+          # Decode the base64-encoded keystore file
           echo "${{ secrets.KEY_BASE64 }}" | base64 -d > app/app.key
 
-          # 写入签名配置到local.properties
+          # Write the signing config to local.properties
           echo "${{ secrets.SIGNING_CONFIG }}" > local.properties
 
 
@@ -90,16 +90,16 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease
 
-      # 把 APK 直接发布为 Prerelease，用户点链接即可下载单个 apk，无需登录、无需解压
+      # Publish the APK directly as a prerelease so users can download a single APK from a link, without logging in or unzipping
       - name: Publish nightly prerelease
         uses: softprops/action-gh-release@v2
         if: success()
         with:
-          tag_name: nightly            # 固定 tag，每晚覆盖同一个「最新每日构建」
+          tag_name: nightly            # Fixed tag; each night overwrites the same "latest nightly build"
           name: Nightly Build
           prerelease: true
           body: |
-            自动每日构建（commit `${{ github.sha }}`）
+            Automated nightly build (commit `${{ github.sha }}`)
 
-            > ⚠️ 开发版本，可能不稳定，仅供测试。
+            > ⚠️ Development build; may be unstable, for testing only.
           files: app/build/outputs/apk/release/*.apk

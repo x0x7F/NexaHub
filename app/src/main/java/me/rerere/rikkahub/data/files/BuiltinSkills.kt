@@ -6,21 +6,21 @@ import java.io.File
 import java.io.FileNotFoundException
 
 /**
- * 内置技能：以 `assets/builtin_skills/<name>/` 随 APK 发布，目录结构与用户技能相同（SKILL.md + 附属文件）。
+ * Built-in skills: shipped with the APK as `assets/builtin_skills/<name>/`, with the same layout as user skills (SKILL.md + supporting files).
  *
- * App 安装/更新后解压到 `filesDir/builtin_skills/`，并挂载到 workspace 的 `/builtin_skills`，
- * 这样附属脚本可以在 workspace 中执行。内置技能只读，与用户技能同名时以用户技能为准。
+ * After the app is installed/updated they are extracted to `filesDir/builtin_skills/` and mounted at `/builtin_skills` in the workspace,
+ * so supporting scripts can run in the workspace. Built-in skills are read-only; a user skill with the same name takes precedence.
  *
- * 注意：aapt 默认会忽略以 `.` 开头的文件和以 `_` 开头的目录，不要用这类名称。
+ * Note: aapt ignores files starting with `.` and directories starting with `_` by default, so don't use such names.
  */
 internal object BuiltinSkills {
     private const val ASSETS_ROOT = "builtin_skills"
     private const val VERSION_FILE = ".version"
 
     /**
-     * 当 App 安装/更新时间变化时，将 assets 中的内置技能完整解压到 [targetDir]，替换旧内容。
+     * When the app install/update time changes, fully extract the built-in skills from assets to [targetDir], replacing the old content.
      *
-     * 用 lastUpdateTime 而非 versionCode 判断，保证开发时每次重新安装都会刷新。
+     * Uses lastUpdateTime rather than versionCode so every reinstall during development refreshes them.
      */
     fun extractIfNeeded(context: Context, targetDir: File) {
         val stamp = context.packageManager
@@ -30,7 +30,7 @@ internal object BuiltinSkills {
         val versionFile = targetDir.resolve(VERSION_FILE)
         if (versionFile.exists() && versionFile.readText() == stamp) return
 
-        // 先完整解压到临时目录再替换，避免中途失败留下半套文件
+        // Fully extract to a temp directory first and then swap, so a failure midway doesn't leave a partial set of files
         val staging = targetDir.resolveSibling(".${targetDir.name}.staging")
         staging.deleteRecursively()
         staging.mkdirs()
@@ -54,7 +54,7 @@ internal object BuiltinSkills {
             children.forEach { copyTree("$assetPath/$it", target.resolve(it)) }
             return
         }
-        // AssetManager 无法区分文件和空目录：list 为空时先按文件打开，打不开则视为空目录
+        // AssetManager can't tell files from empty directories: when list is empty, try opening it as a file, and treat it as an empty directory if that fails
         try {
             open(assetPath).use { input ->
                 target.parentFile?.mkdirs()
@@ -64,7 +64,7 @@ internal object BuiltinSkills {
             target.mkdirs()
             return
         }
-        // assets 不保留可执行位，带 shebang 的脚本需要手动恢复，才能在 workspace 中直接 ./script 执行
+        // Assets don't keep the executable bit; scripts with a shebang need it restored so they can be run directly as ./script in the workspace
         if (target.startsWithShebang()) {
             target.setExecutable(true, false)
         }
@@ -76,7 +76,7 @@ internal object BuiltinSkills {
 }
 
 /**
- * 合并用户技能与内置技能，用户技能在前；与用户技能同名的内置技能会被隐藏。
+ * Merge user skills and built-in skills, user skills first; built-in skills with the same name as a user skill are hidden.
  */
 internal fun mergeWithBuiltinSkills(
     local: List<SkillMetadata>,

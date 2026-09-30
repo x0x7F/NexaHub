@@ -30,7 +30,7 @@ class VideoGenerationManager(
     ): Result<VideoGenerationTask> = provider(setting).queryUnsafe(setting, taskId)
 
     /**
-     * 轮询并依次发出服务端状态。Flow 被取消时，轮询也会立即停止。
+     * Polls and emits the server states in order. Polling stops immediately when the Flow is cancelled.
      */
     fun watch(
         setting: VideoGenerationProviderSetting,

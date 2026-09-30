@@ -11,83 +11,83 @@ import okhttp3.sse.EventSourceListener
 import okhttp3.sse.EventSources
 
 /**
- * 代表 SSE 连接中的各种事件
+ * Represents the events of an SSE connection
  */
 sealed class SseEvent {
     /**
-     * 连接成功打开
+     * The connection opened successfully
      */
     data object Open : SseEvent()
 
     /**
-     * 收到一个具体事件
-     * @param id 事件ID
-     * @param type 事件类型
-     * @param data 事件数据
+     * A specific event was received
+     * @param id event ID
+     * @param type event type
+     * @param data event data
      */
     data class Event(val id: String?, val type: String?, val data: String) : SseEvent()
 
     /**
-     * 连接被关闭
+     * The connection was closed
      */
     data object Closed : SseEvent()
 
     /**
-     * 发生错误
-     * @param throwable 异常信息
-     * @param response 错误时的响应（可能为null）
+     * An error occurred
+     * @param throwable the exception
+     * @param response the response at the time of the error (may be null)
      */
     data class Failure(val throwable: Throwable?, val response: Response?) : SseEvent()
 }
 
 
 /**
- * 为 OkHttpClient 创建 SSE (Server-Sent Events) 连接的扩展函数
+ * Extension function that creates an SSE (Server-Sent Events) connection for an OkHttpClient
  * 
- * 将 OkHttp 的 EventSource 封装成 Kotlin Flow，提供响应式的 SSE 事件流
+ * Wraps OkHttp's EventSource in a Kotlin Flow, providing a reactive stream of SSE events
  * 
- * @param request HTTP 请求，用于建立 SSE 连接
- * @return Flow<SseEvent> 包含 SSE 事件的响应式流
+ * @param request the HTTP request used to establish the SSE connection
+ * @return a Flow<SseEvent> reactive stream of SSE events
  */
 fun OkHttpClient.sseFlow(request: Request): Flow<SseEvent> {
     return callbackFlow {
-        // 1. 创建 EventSourceListener
-        // 监听 SSE 连接的各种事件并转换为 Flow 事件
+        // 1. Create the EventSourceListener
+        // Listens for SSE connection events and converts them into Flow events
         val listener = object : EventSourceListener() {
             override fun onOpen(eventSource: EventSource, response: Response) {
-                // 从回调中安全地发送事件到 Flow
-                // 连接成功建立时触发
+                // Safely send events from the callback into the Flow
+                // Triggered when the connection is established
                 trySend(SseEvent.Open)
             }
 
             override fun onEvent(eventSource: EventSource, id: String?, type: String?, data: String) {
-                // 收到服务器发送的数据事件时触发
-                // 将事件数据封装后发送到 Flow
+                // Triggered when a data event is received from the server
+                // Wrap the event data and send it into the Flow
                 trySend(SseEvent.Event(id, type, data))
             }
 
             override fun onClosed(eventSource: EventSource) {
-                // 连接正常关闭时触发
+                // Triggered when the connection closes normally
                 trySend(SseEvent.Closed)
-                channel.close() // 关闭 Flow 通道
+                channel.close() // Close the Flow channel
             }
 
             override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
-                // 连接发生错误时触发
+                // Triggered when a connection error occurs
                 trySend(SseEvent.Failure(t, response))
-                channel.close(t) // 以异常关闭 Flow 通道
+                channel.close(t) // Close the Flow channel with the exception
             }
         }
 
-        // 2. 创建 EventSource
-        // 使用当前 OkHttpClient 创建 EventSource 工厂
+        // 2. Create the EventSource
+        // Create an EventSource factory with the current OkHttpClient
         val factory = EventSources.createFactory(this@sseFlow)
         val eventSource = factory.newEventSource(request, listener)
 
-        // 3. awaitClose 用于在 Flow 被取消时执行清理操作
-        // 当收集 Flow 的协程被取消时，这个块会被调用
+        // 3. awaitClose runs cleanup when the Flow is cancelled
+        // This block is called when the coroutine collecting the Flow is cancelled
         awaitClose {
-            // 关闭 SSE 连接，释放资源
+            // Close the SSE connection and release resources
             eventSource.cancel()
         }
     }

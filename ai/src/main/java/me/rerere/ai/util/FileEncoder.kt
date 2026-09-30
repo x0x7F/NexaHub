@@ -59,7 +59,7 @@ fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean = true): Result<Encoded
                 throw IllegalArgumentException("File does not exist: ${this.url}")
             }
             val mimeType = file.guessMimeType().getOrThrow()
-            // 统一进行压缩处理
+            // Compress everything uniformly
             val (encoded, outputMimeType) = file.compressAndEncode(mimeType)
             EncodedImage(
                 base64 = if (withPrefix) "data:$outputMimeType;base64,$encoded" else encoded,
@@ -68,12 +68,12 @@ fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean = true): Result<Encoded
         }
 
         this.url.startsWith("data:") -> {
-            // 从 data URL 提取 mime type
+            // Extract the mime type from the data URL
             val mimeType = url.substringAfter("data:").substringBefore(";")
             EncodedImage(base64 = url, mimeType = mimeType)
         }
         this.url.startsWith("http") -> {
-            // HTTP URL 无法确定 mime type，默认使用 image/png
+            // The mime type of an HTTP URL can't be determined; default to image/png
             EncodedImage(base64 = url, mimeType = "image/png")
         }
         else -> throw IllegalArgumentException("Unsupported URL format: $url")
@@ -120,12 +120,12 @@ private fun File.compressAndEncode(
     maxPixels: Long = 16_000_000L,
     quality: Int = 85
 ): Pair<String, String> {
-    // GIF 保持原样（可能是动图）
+    // Keep GIFs as-is (they may be animated)
     if (mimeType == "image/gif") {
         return Pair(encodeToBase64Streaming(), mimeType)
     }
 
-    // 读取图片尺寸
+    // Read the image dimensions
     val options = BitmapFactory.Options().apply {
         inJustDecodeBounds = true
     }
@@ -145,7 +145,7 @@ private fun File.compressAndEncode(
 
     return try {
         val byteArrayOutputStream = ByteArrayOutputStream()
-        // 强制使用 JPEG 格式，因为很多提供商不支持 webp
+        // Always use JPEG, because many providers don't support webp
         Base64OutputStream(byteArrayOutputStream, Base64.NO_WRAP).use { base64Stream ->
             normalizedBitmap.compress(Bitmap.CompressFormat.JPEG, quality, base64Stream)
         }
@@ -230,8 +230,8 @@ private fun File.guessMimeType(): Result<String> = runCatching {
         val read = input.read(bytes)
         if (read < 12) error("File too short to determine MIME type")
 
-        // 判断 HEIF/HEIC/AVIF 格式：ISO-BMFF 容器，"ftyp" box 位于字节 4..8，主品牌码位于 8..12
-        // 新手机的 HDR HEIF 照片常用 heix/hevc/mif1/msf1 等品牌码，而非仅 heic，需全部识别
+        // Detect HEIF/HEIC/AVIF: ISO-BMFF container, the "ftyp" box is at bytes 4..8, the major brand at 8..12
+        // HDR HEIF photos from newer phones often use brands like heix/hevc/mif1/msf1 rather than just heic, so recognize them all
         if (bytes.copyOfRange(4, 8).toString(Charsets.US_ASCII) == "ftyp") {
             when (bytes.copyOfRange(8, 12).toString(Charsets.US_ASCII)) {
                 "heic", "heix", "heim", "heis",
@@ -243,12 +243,12 @@ private fun File.guessMimeType(): Result<String> = runCatching {
             }
         }
 
-        // 判断 JPEG 格式：开头为 0xFF 0xD8
+        // Detect JPEG: starts with 0xFF 0xD8
         if (bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte()) {
             return@runCatching "image/jpeg"
         }
 
-        // 判断 PNG 格式：开头为 89 50 4E 47 0D 0A 1A 0A
+        // Detect PNG: starts with 89 50 4E 47 0D 0A 1A 0A
         if (bytes.copyOfRange(0, 8).contentEquals(
                 byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
             )
@@ -256,14 +256,14 @@ private fun File.guessMimeType(): Result<String> = runCatching {
             return@runCatching "image/png"
         }
 
-        // 判断WebP格式：开头为 "RIFF" + 4字节长度 + "WEBP"
+        // Detect WebP: starts with "RIFF" + 4-byte length + "WEBP"
         if (bytes.copyOfRange(0, 4).toString(Charsets.US_ASCII) == "RIFF" && bytes.copyOfRange(8, 12)
                 .toString(Charsets.US_ASCII) == "WEBP"
         ) {
             return@runCatching "image/webp"
         }
 
-        // 判断 GIF 格式：开头为 "GIF89a" 或 "GIF87a"
+        // Detect GIF: starts with "GIF89a" or "GIF87a"
         val header = bytes.copyOfRange(0, 6).toString(Charsets.US_ASCII)
         if (header == "GIF89a" || header == "GIF87a") {
             return@runCatching "image/gif"

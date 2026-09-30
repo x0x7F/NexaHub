@@ -10,7 +10,7 @@ import me.rerere.rikkahub.utils.JsonInstant
 internal const val CHART_DISPLAY_TOOL_NAME = "chart_display"
 
 /**
- * 思考步骤类型，用于分组 Reasoning、客户端 Tool 和 ServerTool
+ * Thinking step type, used to group Reasoning, client Tools and ServerTools
  */
 sealed interface ThinkingStep {
     data class ReasoningStep(
@@ -27,21 +27,21 @@ sealed interface ThinkingStep {
 }
 
 /**
- * 消息部分块类型，用于保持渲染顺序
+ * Message part block type, used to preserve rendering order
  */
 sealed interface MessagePartBlock {
     data class ThinkingBlock(val steps: List<ThinkingStep>) : MessagePartBlock
     data class ContentBlock(val part: UIMessagePart, val index: Int) : MessagePartBlock
 
-    /** 成功执行的 chart_display 工具调用, 在正文中以图表卡片展示 */
+    /** A successfully executed chart_display tool call, shown as a chart card in the body */
     data class ChartBlock(val tool: UIMessagePart.Tool, val index: Int) : MessagePartBlock
 }
 
 /**
- * 将 parts 分组成 ThinkingBlock 和 ContentBlock
- * 连续的 Reasoning、客户端 Tool 和 ServerTool 会被分组到一个 ThinkingBlock 中
- * 成功执行的 chart_display 原地替换为 ChartBlock (会切断所在的 ThinkingBlock);
- * 生成中或失败的调用仍作为普通 ToolStep 展示
+ * Group parts into ThinkingBlocks and ContentBlocks
+ * Consecutive Reasoning, client Tools and ServerTools are grouped into one ThinkingBlock
+ * A successfully executed chart_display is replaced in place by a ChartBlock (which splits the ThinkingBlock it's in);
+ * calls that are still generating or failed are shown as regular ToolSteps
  */
 fun List<UIMessagePart>.groupMessageParts(): List<MessagePartBlock> {
     val result = mutableListOf<MessagePartBlock>()

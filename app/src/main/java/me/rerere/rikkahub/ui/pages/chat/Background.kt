@@ -33,7 +33,7 @@ fun AssistantBackground(setting: Settings, modifier: Modifier) {
                     .alpha(backgroundOpacity)
             )
 
-            // 全屏渐变遮罩
+            // Full-screen gradient overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()

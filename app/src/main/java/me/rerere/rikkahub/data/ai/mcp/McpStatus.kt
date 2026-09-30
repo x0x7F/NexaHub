@@ -7,10 +7,10 @@ sealed class McpStatus {
     data class Reconnecting(val attempt: Int, val maxAttempts: Int) : McpStatus()
 
     /**
-     * 连接/同步出错。
+     * Connection/sync error.
      *
-     * @param message 简短摘要，用于列表内联展示
-     * @param detail 完整错误信息（含 cause 链与堆栈），用于展开查看与复制；无异常来源时为 null
+     * @param message short summary, shown inline in the list
+     * @param detail full error details (including the cause chain and stack trace) for expanding and copying; null when there's no exception source
      */
     data class Error(val message: String, val detail: String? = null) : McpStatus() {
         companion object {
@@ -23,9 +23,9 @@ sealed class McpStatus {
         }
     }
 
-    /** 服务器返回 401，需要用户完成 OAuth 授权。 */
+    /** The server returned 401 and the user needs to complete OAuth authorization. */
     data object NeedsAuthorization : McpStatus()
 
-    /** 正在进行 OAuth 授权流程（等待浏览器回调 / 交换令牌）。 */
+    /** OAuth authorization in progress (waiting for the browser callback / exchanging tokens). */
     data object Authorizing : McpStatus()
 }

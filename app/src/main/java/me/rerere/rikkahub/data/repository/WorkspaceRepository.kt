@@ -36,8 +36,8 @@ class WorkspaceRepository(
         for (workspace in workspaces) {
             val dir = manager.workspaceDir(workspace.root)
             if (!dir.exists()) {
-                // 目录缺失时不删除记录(例如恢复备份后工作区文件未随数据库一起恢复),
-                // 仅标记为 BROKEN 以保留记录与助手绑定, 避免误删用户工作区
+                // Don't delete the record when the directory is missing (e.g. workspace files weren't restored along with the database after restoring a backup);
+                // only mark it BROKEN to keep the record and its assistant bindings, avoiding deleting the user's workspace by mistake
                 Log.w(TAG, "Workspace directory missing, marking as broken: id=${workspace.id}, root=${workspace.root}")
                 if (workspace.shellStatus != WorkspaceShellStatus.BROKEN.name) {
                     updateShellState(workspace.id, WorkspaceShellStatus.BROKEN.name)
@@ -91,7 +91,7 @@ class WorkspaceRepository(
         return true
     }
 
-    /** 名字是否已被其他 workspace 占用（trim 后精确匹配，排除 [excludeId] 自身） */
+    /** Whether the name is already used by another workspace (exact match after trim, excluding [excludeId] itself) */
     suspend fun isNameTaken(name: String, excludeId: String?): Boolean {
         val target = name.trim()
         return dao.getAll().any { it.id != excludeId && it.name.trim() == target }
@@ -121,7 +121,7 @@ class WorkspaceRepository(
         val workspace = dao.getById(id) ?: return false
         updateShellState(workspace, WorkspaceShellStatus.INSTALLING.name)
         try {
-            // runInterruptible 让协程取消转成线程中断, 打断 install 内阻塞的下载/解压循环
+            // runInterruptible turns coroutine cancellation into a thread interrupt, breaking the blocking download/extract loop in install
             runInterruptible(Dispatchers.IO) {
                 rootfsInstaller.install(workspace.root, url, onProgress)
             }
@@ -175,9 +175,9 @@ class WorkspaceRepository(
     }
 
     /**
-     * 读取文本用于应用内预览/编辑, 支持两个存储区.
-     * FILES 区走 [WorkspaceManager.readText] (自带大小保护); LINUX 区通过 exportFile 读入内存,
-     * 因此这里对 LINUX 区显式做大小限制, 避免大文件撑爆内存.
+     * Read text for in-app preview/editing; supports both storage areas.
+     * The FILES area goes through [WorkspaceManager.readText] (which has its own size guard); the LINUX area is read into memory via exportFile,
+     * so the size is limited explicitly here for the LINUX area to keep large files from exhausting memory.
      */
     suspend fun readTextForPreview(
         id: String,
@@ -191,7 +191,7 @@ class WorkspaceRepository(
             WorkspaceStorageArea.LINUX -> {
                 val size = manager.fileSize(workspace.root, path, area)
                 require(size <= MAX_PREVIEW_BYTES) {
-                    "文件过大, 无法预览 (${size} bytes)"
+                    "File too large to preview (${size} bytes)"
                 }
                 ByteArrayOutputStream().use { out ->
                     manager.exportFile(workspace.root, path, area, out)
@@ -242,7 +242,7 @@ class WorkspaceRepository(
         manager.exportFile(workspace.root, path, area, outputStream)
     }
 
-    /** 按 Rootfs 内绝对路径读取文件大小, 支持 /workspace、bind mount 与 Rootfs 内部路径 */
+    /** Get a file's size by its absolute path inside the Rootfs; supports /workspace, bind mounts and paths inside the Rootfs */
     suspend fun rootfsFileSize(
         id: String,
         path: String,
@@ -252,7 +252,7 @@ class WorkspaceRepository(
         manager.rootfsFileSize(workspace.root, path)
     }
 
-    /** 按 Rootfs 内绝对路径导出文件内容, 支持 /workspace、bind mount 与 Rootfs 内部路径 */
+    /** Export a file's content by its absolute path inside the Rootfs; supports /workspace, bind mounts and paths inside the Rootfs */
     suspend fun exportRootfsFile(
         id: String,
         path: String,
@@ -295,7 +295,7 @@ class WorkspaceRepository(
         stdin: ByteArray? = null,
     ): WorkspaceCommandResult {
         val workspace = dao.getById(id) ?: error("Workspace not found: $id")
-        // runInterruptible 让协程取消转化为线程中断，从而打断阻塞的 Process.waitFor 并杀掉进程
+        // runInterruptible turns coroutine cancellation into a thread interrupt, which breaks the blocking Process.waitFor and kills the process
         return runInterruptible(Dispatchers.IO) {
             manager.ensureWorkspace(workspace.root)
             manager.executeCommand(

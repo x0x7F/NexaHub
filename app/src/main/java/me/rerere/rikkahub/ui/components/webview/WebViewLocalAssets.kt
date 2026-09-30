@@ -5,15 +5,15 @@ import android.net.Uri
 import android.webkit.WebResourceResponse
 
 /**
- * 应用内 WebView 使用的虚拟域名，用于给 loadDataWithBaseURL 提供一个稳定的 origin。
+ * Virtual domain used by the in-app WebView, giving loadDataWithBaseURL a stable origin.
  */
 const val WEB_VIEW_BASE_URL = "https://rikkahub.local"
 
 /**
- * 虚拟域名下的静态资源前缀，会被映射到 app 的 assets 目录。
+ * Static resource prefix under the virtual domain, mapped to the app's assets directory.
  *
- * 例如 `https://rikkahub.local/assets/html/mermaid.min.js` 对应 `assets/html/mermaid.min.js`，
- * 这样 mermaid/katex 之类的库可以本地加载，而不用从 CDN 下载（首次加载可能需要几十秒）。
+ * For example `https://rikkahub.local/assets/html/mermaid.min.js` maps to `assets/html/mermaid.min.js`,
+ * so libraries like mermaid/katex load locally instead of being downloaded from a CDN (the first load could take tens of seconds).
  */
 const val WEB_VIEW_ASSET_URL = "$WEB_VIEW_BASE_URL/assets"
 

@@ -1,7 +1,7 @@
 [project]
 name = "locale-tui"
 version = "0.1.0"
-description = "Android Locale Manager - 管理和翻译 Android 字符串资源"
+description = "Android Locale Manager - manage and translate Android string resources"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

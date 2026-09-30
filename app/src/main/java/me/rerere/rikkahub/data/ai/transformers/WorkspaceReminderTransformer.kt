@@ -12,11 +12,11 @@ import java.io.ByteArrayOutputStream
 import java.nio.file.Paths
 
 /**
- * Workspace 系统提示注入转换器
+ * Workspace system prompt injection transformer
  *
- * 当助手绑定了一个 shell 已就绪的 workspace 时, 在系统提示词中追加一段引导,
- * 让模型了解 workspace 环境与 workspace_* 工具的使用方式。
- * 同时读取 ~/.agents、/workspace 和会话当前目录中的 AGENTS.md 作为工作区指令。
+ * When the assistant is bound to a workspace whose shell is ready, append guidance to the system prompt
+ * so the model understands the workspace environment and how to use the workspace_* tools.
+ * Also reads AGENTS.md from ~/.agents, /workspace and the session's current directory as workspace instructions.
  */
 class WorkspaceReminderTransformer(
     private val workspaceRepository: WorkspaceRepository,
@@ -27,13 +27,13 @@ class WorkspaceReminderTransformer(
     ): List<UIMessage> {
         val workspaceId = ctx.assistant.workspaceId?.toString() ?: return messages
         val workspace = workspaceRepository.getById(workspaceId) ?: return messages
-        // 与 ChatToolFactory.createWorkspaceToolsIfReady 保持一致: 仅在 shell 就绪时注入
+        // Consistent with ChatToolFactory.createWorkspaceToolsIfReady: only inject when the shell is ready
         if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return messages
 
         val prompt = buildWorkspacePrompt(workspace, ctx.workspaceCwd) +
             buildAgentsPrompt(workspaceId, ctx.workspaceCwd)
 
-        // 追加到第一条 system 消息; 若不存在则插入一条
+        // Append to the first system message; insert one if none exists
         val systemIndex = messages.indexOfFirst { it.role == MessageRole.SYSTEM }
         return if (systemIndex >= 0) {
             messages.toMutableList().apply {
@@ -47,7 +47,7 @@ class WorkspaceReminderTransformer(
     }
 
     private suspend fun buildAgentsPrompt(workspaceId: String, cwd: String?): String {
-        // ProotShellRunner 将 HOME 固定为 /root；相对 PWD 按 /workspace 解析。
+        // ProotShellRunner fixes HOME at /root; a relative PWD is resolved against /workspace.
         val workingDirectory = Paths.get("/workspace")
             .resolve(cwd?.takeIf { it.isNotBlank() } ?: ".")
             .normalize()

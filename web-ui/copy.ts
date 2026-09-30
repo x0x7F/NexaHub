@@ -11,7 +11,7 @@ const SOURCE_DIR = "./build/client";
 const TARGET_DIR = "../web/src/main/resources/static";
 
 function copyDirectory(src: string, dest: string) {
-  // 确保目标目录存在
+  // Make sure the target directory exists
   mkdirSync(dest, { recursive: true });
 
   const entries = readdirSync(src, { withFileTypes: true });
@@ -23,7 +23,7 @@ function copyDirectory(src: string, dest: string) {
     if (entry.isDirectory()) {
       copyDirectory(srcPath, destPath);
     } else {
-      // 确保父目录存在
+      // Make sure the parent directory exists
       mkdirSync(dirname(destPath), { recursive: true });
       copyFileSync(srcPath, destPath);
     }
@@ -35,7 +35,7 @@ try {
   console.log(`   Source: ${SOURCE_DIR}`);
   console.log(`   Target: ${TARGET_DIR}`);
 
-  // 检查源目录是否存在
+  // Check that the source directory exists
   try {
     statSync(SOURCE_DIR);
   } catch {
@@ -44,15 +44,15 @@ try {
     process.exit(1);
   }
 
-  // 清理目标目录（如果存在）
+  // Clean the target directory (if it exists)
   try {
     rmSync(TARGET_DIR, { recursive: true, force: true });
     console.log("🧹 Cleaned target directory");
   } catch (err) {
-    // 目标目录不存在，忽略错误
+    // The target directory doesn't exist; ignore the error
   }
 
-  // 复制文件
+  // Copy the files
   copyDirectory(SOURCE_DIR, TARGET_DIR);
 
   console.log("✅ Build output copied successfully!");

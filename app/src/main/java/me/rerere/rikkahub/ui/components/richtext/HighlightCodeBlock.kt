@@ -186,7 +186,7 @@ fun HighlightCodeBlock(
                     val displayCode = if (isExpanded) code else collapsedCode
                     val displayLines = remember(displayCode) { displayCode.lines() }
 
-                    // 如果显示行号且自动换行，需要逐行渲染以保持对齐
+                    // With line numbers and soft wrap on, render line by line to keep them aligned
                     when {
                         showLineNumbers && autoWrap -> {
                             CodeBlockWithLineNumbersWrapped(
@@ -211,7 +211,7 @@ fun HighlightCodeBlock(
                     }
 
                     Spacer(Modifier.height(4.dp))
-                    // 代码折叠按钮
+                    // Code fold button
                     if (settings.displaySetting.codeBlockAutoCollapse && codeLines.size > COLLAPSE_LINES) {
                         Box(
                             modifier = Modifier
@@ -315,7 +315,7 @@ private fun CodeBlockDefault(
             }
         )
     ) {
-        // 行号列
+        // Line number column
         if (showLineNumbers) {
             val lineNumberWidth = remember(displayLines.size) {
                 displayLines.size.toString().length
@@ -336,7 +336,7 @@ private fun CodeBlockDefault(
             }
         }
 
-        // 代码列
+        // Code column
         SelectionContainer {
             CodeHighlightText(
                 code = displayCode,

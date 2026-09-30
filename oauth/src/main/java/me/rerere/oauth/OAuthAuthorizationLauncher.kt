@@ -9,7 +9,7 @@ fun interface OAuthAuthorizationLauncher {
     fun launch(context: Context, authorizationUrl: String)
 }
 
-/** 使用 Custom Tabs 打开 OAuth 授权页面。 */
+/** Opens the OAuth authorization page with Custom Tabs. */
 object CustomTabsOAuthAuthorizationLauncher : OAuthAuthorizationLauncher {
     override fun launch(context: Context, authorizationUrl: String) {
         val intent = CustomTabsIntent.Builder()

@@ -13,7 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import me.rerere.rikkahub.R
 
 /**
- * 通知构建器的配置 DSL
+ * Configuration DSL for the notification builder
  */
 class NotificationConfig {
     var title: String = ""
@@ -28,18 +28,18 @@ class NotificationConfig {
     var contentIntent: PendingIntent? = null
     var useBigTextStyle: Boolean = false
 
-    // Live Update 相关
+    // Live Update
     var requestPromotedOngoing: Boolean = false
     var shortCriticalText: String? = null
 
-    // 默认通知效果
+    // Default notification effects
     var useDefaults: Boolean = false
 }
 
 object NotificationUtil {
 
     /**
-     * 检查是否有通知权限
+     * Check whether the notification permission is granted
      */
     fun hasNotificationPermission(context: Context): Boolean {
         return ActivityCompat.checkSelfPermission(
@@ -49,13 +49,13 @@ object NotificationUtil {
     }
 
     /**
-     * 使用 DSL 风格创建并发送通知
+     * Create and send a notification DSL-style
      *
-     * @param context 上下文
-     * @param channelId 通知渠道 ID
-     * @param notificationId 通知 ID
-     * @param config 通知配置 lambda
-     * @return 是否成功发送
+     * @param context context
+     * @param channelId notification channel ID
+     * @param notificationId notification ID
+     * @param config notification config lambda
+     * @return whether it was sent successfully
      */
     @SuppressLint("MissingPermission")
     fun notify(
@@ -76,7 +76,7 @@ object NotificationUtil {
     }
 
     /**
-     * 构建通知
+     * Build the notification
      */
     fun buildNotification(
         context: Context,
@@ -104,12 +104,12 @@ object NotificationUtil {
                 setDefaults(NotificationCompat.DEFAULT_ALL)
             }
 
-            // Android 15+ Live Update 支持
+            // Android 15+ Live Update support
             if (config.requestPromotedOngoing && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                 setRequestPromotedOngoing(true)
             }
 
-            // Android 16+ 状态栏 chip 文本
+            // Android 16+ status bar chip text
             if (config.shortCriticalText != null && Build.VERSION.SDK_INT >= 36) {
                 setShortCriticalText(config.shortCriticalText!!)
             }
@@ -117,14 +117,14 @@ object NotificationUtil {
     }
 
     /**
-     * 取消通知
+     * Cancel a notification
      */
     fun cancel(context: Context, notificationId: Int) {
         NotificationManagerCompat.from(context).cancel(notificationId)
     }
 
     /**
-     * 取消所有通知
+     * Cancel all notifications
      */
     fun cancelAll(context: Context) {
         NotificationManagerCompat.from(context).cancelAll()
@@ -132,7 +132,7 @@ object NotificationUtil {
 }
 
 /**
- * Context 扩展函数，简化通知发送
+ * Context extension that simplifies sending notifications
  */
 fun Context.sendNotification(
     channelId: String,
@@ -141,7 +141,7 @@ fun Context.sendNotification(
 ): Boolean = NotificationUtil.notify(this, channelId, notificationId, config)
 
 /**
- * Context 扩展函数，取消通知
+ * Context extension that cancels a notification
  */
 fun Context.cancelNotification(notificationId: Int) {
     NotificationUtil.cancel(this, notificationId)

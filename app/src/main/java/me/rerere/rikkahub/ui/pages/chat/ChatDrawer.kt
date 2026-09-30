@@ -131,7 +131,7 @@ fun ChatDrawerContent(
         initialValue = emptyMap(),
     )
 
-    // 昵称编辑状态
+    // Nickname editing state
     val nicknameEditState = useEditState<String> { newNickname ->
         vm.updateSettings(
             settings.copy(
@@ -142,12 +142,12 @@ fun ChatDrawerContent(
         )
     }
 
-    // 移动对话状态
+    // Move conversation state
     var showMoveToAssistantSheet by remember { mutableStateOf(false) }
     var conversationToMove by remember { mutableStateOf<Conversation?>(null) }
     val bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
 
-    // 文件夹相关状态
+    // Folder state
     var showMoveToFolderSheet by remember { mutableStateOf(false) }
     var conversationToMoveFolder by remember { mutableStateOf<Conversation?>(null) }
     val folderSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
@@ -155,7 +155,7 @@ fun ChatDrawerContent(
     var folderToRename by remember { mutableStateOf<Folder?>(null) }
     var folderToDelete by remember { mutableStateOf<Folder?>(null) }
 
-    // Menu popup 状态
+    // Menu popup state
     var showMenuPopup by remember { mutableStateOf(false) }
 
     ModalDrawerSheet(
@@ -170,7 +170,7 @@ fun ChatDrawerContent(
                 onClick = { navController.navigate(Screen.Backup) },
             )
 
-            // 用户头像和昵称自定义区域
+            // User avatar and nickname customization area
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -274,7 +274,7 @@ fun ChatDrawerContent(
                 }
             )
 
-            // 助手选择器
+            // Assistant picker
             AssistantPicker(
                 settings = settings,
                 onUpdateSettings = {
@@ -370,10 +370,10 @@ fun ChatDrawerContent(
 
                 DrawerAction(
                     icon = {
-                        Icon(HugeIcons.ChartColumn, "统计数据")
+                        Icon(HugeIcons.ChartColumn, "Statistics")
                     },
                     label = {
-                        Text("统计数据")
+                        Text("Statistics")
                     },
                     onClick = {
                         navController.navigate(Screen.Stats)
@@ -395,7 +395,7 @@ fun ChatDrawerContent(
         }
     }
 
-    // 昵称编辑对话框
+    // Nickname editing dialog
     nicknameEditState.EditStateContent { nickname, onUpdate ->
         AlertDialog(
             onDismissRequest = {
@@ -434,7 +434,7 @@ fun ChatDrawerContent(
         )
     }
 
-    // 移动到文件夹 Bottom Sheet
+    // Move-to-folder bottom sheet
     if (showMoveToFolderSheet) {
         val doMove: (Uuid?) -> Unit = { folderId ->
             conversationToMoveFolder?.let { conversation ->
@@ -467,7 +467,7 @@ fun ChatDrawerContent(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                // 移出文件夹（未归类）
+                // Move out of the folder (uncategorized)
                 Surface(
                     onClick = { doMove(null) },
                     modifier = Modifier.fillMaxWidth(),
@@ -531,7 +531,7 @@ fun ChatDrawerContent(
         }
     }
 
-    // 新建文件夹对话框
+    // New folder dialog
     if (showCreateFolderDialog) {
         var name by remember { mutableStateOf("") }
         AlertDialog(
@@ -563,7 +563,7 @@ fun ChatDrawerContent(
         )
     }
 
-    // 重命名文件夹对话框
+    // Rename folder dialog
     folderToRename?.let { folder ->
         var name by remember(folder.id) { mutableStateOf(folder.name) }
         AlertDialog(
@@ -594,7 +594,7 @@ fun ChatDrawerContent(
         )
     }
 
-    // 删除文件夹确认
+    // Delete folder confirmation
     folderToDelete?.let { folder ->
         AlertDialog(
             onDismissRequest = { folderToDelete = null },
@@ -620,7 +620,7 @@ fun ChatDrawerContent(
         )
     }
 
-    // 移动到助手 Bottom Sheet
+    // Move-to-assistant bottom sheet
     if (showMoveToAssistantSheet) {
         ModalBottomSheet(
             onDismissRequest = {
@@ -670,7 +670,7 @@ fun ChatDrawerContent(
 @Composable
 private fun DrawerActions(navController: Navigator) {
     Column {
-        // 搜索入口
+        // Search entry
         Surface(
             onClick = { navController.navigate(Screen.MessageSearch) },
             modifier = Modifier
@@ -700,7 +700,7 @@ private fun DrawerActions(navController: Navigator) {
             }
         }
 
-        // 历史记录入口
+        // History entry
         Surface(
             onClick = { navController.navigate(Screen.History) },
             modifier = Modifier

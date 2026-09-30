@@ -29,7 +29,7 @@ class RegexesTest {
         val digit = compilePattern("""\d""", unicode = true)
 
         assertTrue(word.matcher("a").matches())
-        assertFalse(word.matcher("中").matches())
+        assertFalse(word.matcher("é").matches())
         assertTrue(digit.matcher("1").matches())
         assertFalse(digit.matcher("١").matches())
     }

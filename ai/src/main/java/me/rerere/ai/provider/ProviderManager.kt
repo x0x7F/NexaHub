@@ -7,44 +7,44 @@ import me.rerere.ai.provider.providers.openai.OpenAIProvider
 import okhttp3.OkHttpClient
 
 /**
- * Provider管理器，负责注册和获取Provider实例
+ * Provider manager, responsible for registering and looking up Provider instances
  */
 class ProviderManager(client: OkHttpClient, context: Context) {
-    // 存储已注册的Provider实例
+    // Registered Provider instances
     private val providers = mutableMapOf<String, Provider<*>>()
 
     init {
-        // 注册默认Provider
+        // Register the default Providers
         registerProvider("openai", OpenAIProvider(client, context))
         registerProvider("google", GoogleProvider(client, context))
         registerProvider("claude", ClaudeProvider(client, context))
     }
 
     /**
-     * 注册Provider实例
+     * Register a Provider instance
      *
-     * @param name Provider名称
-     * @param provider Provider实例
+     * @param name Provider name
+     * @param provider Provider instance
      */
     fun registerProvider(name: String, provider: Provider<*>) {
         providers[name] = provider
     }
 
     /**
-     * 获取Provider实例
+     * Get a Provider instance
      *
-     * @param name Provider名称
-     * @return Provider实例，如果不存在则返回null
+     * @param name Provider name
+     * @return the Provider instance, or null if it does not exist
      */
     fun getProvider(name: String): Provider<*> {
         return providers[name] ?: throw IllegalArgumentException("Provider not found: $name")
     }
 
     /**
-     * 根据ProviderSetting获取对应的Provider实例
+     * Get the Provider instance for a ProviderSetting
      *
-     * @param setting Provider设置
-     * @return Provider实例，如果不存在则返回null
+     * @param setting Provider setting
+     * @return the Provider instance, or null if it does not exist
      */
     fun <T : ProviderSetting> getProviderByType(setting: T): Provider<T> {
         @Suppress("UNCHECKED_CAST")

@@ -6,7 +6,7 @@ import com.github.difflib.UnifiedDiffUtils
 private const val DEFAULT_CONTEXT_LINES = 3
 
 /**
- * 生成 [oldText] 到 [newText] 的 unified diff 文本, 内容相同时返回 null
+ * Generate the unified diff text from [oldText] to [newText]; returns null when the content is identical
  */
 fun generateUnifiedDiff(
     oldText: String,

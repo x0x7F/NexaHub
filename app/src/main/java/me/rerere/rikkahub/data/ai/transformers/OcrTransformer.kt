@@ -59,7 +59,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
 
         return withContext(Dispatchers.IO) {
             try {
-                ctx.processingStatus.value = "正在识别图片..."
+                ctx.processingStatus.value = "Recognizing image..."
                 messages.map { message ->
                     message.copy(
                         parts = message.parts.map { part ->

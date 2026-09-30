@@ -42,25 +42,25 @@ import java.util.Collections
 
 private const val TAG = "StepASR"
 
-// 提前在 6MB 触发分段, 与 MiMo 一致, 避免单段过大导致网络传输失败.
+// Trigger segmentation early at 6MB, same as MiMo, so an oversized segment doesn't fail the network transfer.
 private const val MAX_SEGMENT_BYTES = 6 * 1024 * 1024
 
-// 最小段长度: 16kHz/16bit/mono 下 100ms = 3200 字节。短于这个长度直接丢弃,
-// 避免把超短碎片 (比如 stop 时缓冲区里的残留) 发给服务端导致 400。
+// Minimum segment length: 100ms = 3200 bytes at 16kHz/16bit/mono. Anything shorter is dropped,
+// so tiny fragments (such as leftovers in the buffer on stop) aren't sent to the server and cause a 400.
 private const val MIN_SEGMENT_BYTES = 3200
 
-// HTTP 请求失败时的最大重试次数 (含首次). 主要用于偶发 400/网络抖动的自动恢复.
+// Maximum number of attempts for a failed HTTP request (including the first). Mainly for automatic recovery from occasional 400s/network hiccups.
 private const val MAX_RETRY = 3
 
 /**
- * 阶跃星辰 Step ASR Controller。
+ * StepFun Step ASR Controller.
  *
- * 与 MiMo 类似也是 HTTP 一次性提交 + 分段上传, 走 Step ASR SSE 端点:
+ * Like MiMo, it's a one-shot HTTP submission + segmented upload, using the Step ASR SSE endpoint:
  * - JSON body: audio.data=<pcm base64> / audio.input.transcription / audio.input.format
- * - 鉴权: `Authorization: Bearer sk-xxx`
- * - 响应: text/event-stream, 事件类型包括 transcript.text.delta / transcript.text.done / error
+ * - Authentication: `Authorization: Bearer sk-xxx`
+ * - Response: text/event-stream, with event types including transcript.text.delta / transcript.text.done / error
  *
- * 官方文档: https://platform.stepfun.com/docs/zh/api-reference/audio/asr-sse
+ * Official docs: https://platform.stepfun.com/docs/api-reference/audio/asr-sse
  */
 class StepASRController(
     private val context: Context,
@@ -76,7 +76,7 @@ class StepASRController(
     private var audioRecord: AudioRecord? = null
     private var onTranscriptChange: ((String) -> Unit)? = null
 
-    // 同一时刻只允许一个 flush 协程在跑, 避免乱序拼结果
+    // Only one flush coroutine may run at a time, to avoid assembling results out of order
     private var flushJob: Job? = null
 
     private val bufferLock = Any()
@@ -103,7 +103,7 @@ class StepASRController(
         completedTranscripts.clear()
         flushJob = null
 
-        // Step 是 HTTP 一次性接口, 没有 WebSocket 连接阶段, 直接进入 Listening
+        // Step is a one-shot HTTP API with no WebSocket connection phase, so go straight to Listening
         _state.update {
             ASRState(
                 status = ASRStatus.Listening,
@@ -118,10 +118,10 @@ class StepASRController(
         releaseRecorder()
         _state.update { it.copy(status = ASRStatus.Stopping) }
 
-        // 把剩余 PCM 做最后一次 flush, 完成后切回 Idle
+        // Do a final flush of the remaining PCM, then switch back to Idle
         scope.launch(Dispatchers.IO) {
             try {
-                // 等当前正在跑的 flushJob 完成, 避免并发 flush 导致缓冲区竞争
+                // Wait for the running flushJob to finish, so concurrent flushes don't compete for the buffer
                 flushJob?.join()
                 flushSegment()
             } catch (e: Exception) {
@@ -184,7 +184,7 @@ class StepASRController(
                         }
 
                         if (shouldFlush) {
-                            // 用单独协程异步 flush, 不阻塞录音主循环
+                            // Flush asynchronously in a separate coroutine, without blocking the main recording loop
                             triggerFlush()
                         }
                     } else if (read < 0) {
@@ -201,7 +201,7 @@ class StepASRController(
     }
 
     private fun triggerFlush() {
-        // 同一时刻只跑一个 flush, 避免后发先至导致结果乱序
+        // Only run one flush at a time, so a later request finishing first doesn't produce out-of-order results
         if (flushJob?.isActive == true) return
         flushJob = scope.launch(Dispatchers.IO) {
             runCatching { flushSegment() }
@@ -210,10 +210,10 @@ class StepASRController(
     }
 
     /**
-     * 取出当前缓冲区里的 PCM, base64 后用 JSON 上传到 Step /v1/audio/asr/sse。
-     * 响应是 SSE, 把 delta/done 事件拼成识别结果后加到 completedTranscripts。
+     * Take the PCM in the current buffer, base64-encode it and upload it as JSON to Step /v1/audio/asr/sse.
+     * The response is SSE; the delta/done events are assembled into the recognition result and added to completedTranscripts.
      *
-     * 在 bufferLock 内拷贝出 PCM 并立刻重置缓冲区, 不持有锁等待网络, 避免阻塞录音写。
+     * The PCM is copied out inside bufferLock and the buffer reset immediately, without holding the lock while waiting on the network, to avoid blocking recording writes.
      */
     private suspend fun flushSegment() {
         val pcmBytes = synchronized(bufferLock) {
@@ -224,8 +224,8 @@ class StepASRController(
             bytes
         }
 
-        // 太短的段直接丢弃, 避免服务端因音频过短返回 400
-        // (16kHz/16bit/mono 下 6400 字节 = 200ms, 短于这个长度服务端通常无法识别)
+        // Drop segments that are too short, so the server doesn't return 400 for audio that's too short
+        // (6400 bytes = 200ms at 16kHz/16bit/mono; the server usually can't recognize anything shorter)
         if (pcmBytes.size < MIN_SEGMENT_BYTES) {
             Log.d(TAG, "Skip flush: PCM too short (${pcmBytes.size} bytes)")
             return
@@ -295,7 +295,7 @@ class StepASRController(
                 lastError = e
                 Log.w(TAG, "flushSegment attempt $attempt/$MAX_RETRY failed: ${e.message}")
                 if (attempt < MAX_RETRY) {
-                    kotlinx.coroutines.delay(300L * attempt) // 指数退避: 300ms, 600ms
+                    kotlinx.coroutines.delay(300L * attempt) // Exponential backoff: 300ms, 600ms
                 }
             }
         }

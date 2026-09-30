@@ -13,15 +13,15 @@ interface TTSProvider<T : TTSProviderSetting> {
     ): Flow<AudioChunk>
 
     /**
-     * 可选：指导 AI 如何在朗读文本中加入该 provider 支持的语气/情感标记的提示词。
+     * Optional: a prompt guiding the AI on how to add the tone/emotion tags this provider supports to the spoken text.
      *
-     * 默认空 = 不注入。支持内联标记的 provider 直接在实现类里覆盖此值（硬编码）。
-     * 该内容会在 text_to_speech 工具启用时被追加进 system prompt。
+     * Empty by default = nothing injected. Providers that support inline tags override this directly in the implementation (hard-coded).
+     * This content is appended to the system prompt when the text_to_speech tool is enabled.
      *
-     * 注意（写内容时的两个约束）：
-     * 1. 要求 AI 仅把标记放进 text_to_speech 工具的 text 参数，不要出现在给用户看的正文里；
-     * 2. 标记需能扛过清洗管线：避免 `*` `_` 等会被 stripMarkdown 删除的符号，
-     *    且标记内部不要含 `。，！？…` 等会被 TextChunker 切断的标点。优先用方括号/尖括号。
+     * Note (two constraints when writing it):
+     * 1. Ask the AI to put tags only in the text parameter of the text_to_speech tool, not in the body shown to the user;
+     * 2. Tags must survive the cleanup pipeline: avoid symbols such as `*` `_` that stripMarkdown removes,
+     *    and don't put punctuation that TextChunker splits on (such as `。，！？…`) inside tags. Prefer square/angle brackets.
      */
     val promptGuidance: String
         get() = ""

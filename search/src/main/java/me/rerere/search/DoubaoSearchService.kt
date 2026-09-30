@@ -30,7 +30,7 @@ object DoubaoSearchService : SearchService<SearchServiceOptions.DoubaoOptions> {
         TextButton(onClick = {
             uriHandler.openUri("https://console.volcengine.com/search-infinity/api-key")
         }) {
-            Text("豆包搜索 API Key")
+            Text("Doubao Search API Key")
         }
     }
 

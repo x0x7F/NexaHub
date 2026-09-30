@@ -270,7 +270,7 @@ private fun ImportProviderButton(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // 主要操作：扫描二维码
+                        // Primary action: scan a QR code
                         Button(
                             onClick = {
                                 showImportDialog = false
@@ -299,7 +299,7 @@ private fun ImportProviderButton(
                             }
                         }
 
-                        // 次要操作：从相册选择
+                        // Secondary action: pick from the gallery
                         OutlinedButton(
                             onClick = {
                                 showImportDialog = false
@@ -400,7 +400,7 @@ private fun handleImageQRCode(
     context: android.content.Context
 ) {
     runCatching {
-        // 使用ImageUtils解析二维码
+        // Parse the QR code with ImageUtils
         val qrContent = ImageUtils.decodeQRCodeFromUri(context, uri)
 
         if (qrContent.isNullOrEmpty()) {
@@ -532,11 +532,6 @@ private fun ProviderItem(
                                 provider.models.size
                             )
                         )
-                    }
-                    if (provider.name == "AiHubMix") {
-                        Tag(type = TagType.INFO) {
-                            Text("10% 优惠")
-                        }
                     }
                 }
             }

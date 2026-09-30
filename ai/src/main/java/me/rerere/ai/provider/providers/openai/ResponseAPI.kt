@@ -172,7 +172,7 @@ class ResponseAPI(
                 var exception = t
 
                 t?.printStackTrace()
-                println("[onFailure] 发生错误: ${t?.javaClass?.name} ${t?.message} / $response")
+                println("[onFailure] error: ${t?.javaClass?.name} ${t?.message} / $response")
 
                 val bodyRaw = response?.body?.stringSafe()
                 try {
@@ -200,10 +200,10 @@ class ResponseAPI(
             .newEventSource(request, listener)
 
         awaitClose {
-            println("[awaitClose] 关闭eventSource ")
+            println("[awaitClose] closing eventSource ")
             eventSource.cancel()
         }
-        // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
+        // trySend silently drops deltas when the buffer is full, which drops characters mid-reply (#1295), so the buffer must be unbounded
     }.buffer(Channel.UNLIMITED).flowOn(Dispatchers.IO)
 
     internal fun buildRequestBody(
@@ -255,8 +255,8 @@ class ResponseAPI(
             }
 
             // tools
-            // Response API 的 tools 是扁平数组, 函数工具和内置工具可以共存, 必须写在同一个 key 下,
-            // 否则后写入的会覆盖前者
+            // Response API tools are a flat array; function tools and built-in tools can coexist and must be under the same key,
+            // otherwise the later write overwrites the earlier one
             val useFunctionTools =
                 params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty()
             if (useFunctionTools || params.model.tools.isNotEmpty()) {
@@ -335,12 +335,12 @@ class ResponseAPI(
                                 if (reasoningId != null && !emittedReasoningIds.add(reasoningId)) {
                                     return@forEach
                                 }
-                                // 先输出累积的文本/图片内容
+                                // First emit the accumulated text/image content
                                 if (contentBuffer.isNotEmpty()) {
                                     addContentItem(MessageRole.ASSISTANT, contentBuffer)
                                     contentBuffer.clear()
                                 }
-                                // 输出 reasoning item
+                                // Emit the reasoning item
                                 val reasoningParts = if (reasoningId == null) {
                                     listOf(part)
                                 } else {
@@ -408,19 +408,19 @@ class ResponseAPI(
                 }
 
                 is PartGroup.Tools -> {
-                    // 先输出累积的内容
+                    // First emit the accumulated content
                     if (contentBuffer.isNotEmpty()) {
                         addContentItem(MessageRole.ASSISTANT, contentBuffer)
                         contentBuffer.clear()
                     }
 
-                    // 同一批并发工具调用需先输出全部 function_call，再输出对应结果。
+                    // For a batch of concurrent tool calls, emit all function_calls first, then their results.
                     group.tools.forEach { tool ->
                         add(buildJsonObject {
                             put("type", "function_call")
                             put("call_id", tool.toolCallId)
                             put("name", tool.toolName)
-                            // 使用 inputAsJson() 归一化，避免流式中断导致的残缺 JSON 被发送
+                            // Normalize with inputAsJson() so truncated JSON from an interrupted stream is never sent
                             put("arguments", tool.inputAsJson().toString())
                         })
                     }
@@ -464,7 +464,7 @@ class ResponseAPI(
             }
         }
 
-        // 输出剩余内容
+        // Emit the remaining content
         if (contentBuffer.isNotEmpty()) {
             addContentItem(MessageRole.ASSISTANT, contentBuffer)
         }

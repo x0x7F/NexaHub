@@ -211,7 +211,7 @@ class RouteActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent) {
         val backStack = navStack ?: run {
-            // Compose 尚未创建导航栈，待就绪后处理。
+            // Compose hasn't created the navigation stack yet; handle it once ready.
             pendingIntents.addLast(intent)
             return
         }
@@ -245,8 +245,8 @@ class RouteActivity : ComponentActivity() {
                 when (event) {
                     is AppEvent.Speak -> tts.speak(event.text)
                     is AppEvent.OpenUsageAccessSettings -> this@RouteActivity.openUsageAccessSettings()
-                    is AppEvent.ChatGenerationUpdate -> Unit // 由 ChatNotificationManager 消费
-                    is AppEvent.ChatGenerationEnded -> Unit // 由 ChatNotificationManager 消费
+                    is AppEvent.ChatGenerationUpdate -> Unit // Consumed by ChatNotificationManager
+                    is AppEvent.ChatGenerationEnded -> Unit // Consumed by ChatNotificationManager
                 }
             }
         }
@@ -530,7 +530,7 @@ class RouteActivity : ComponentActivity() {
                     )
                     if (BuildConfig.DEBUG) {
                         Text(
-                            text = "[开发模式]",
+                            text = "[Developer Mode]",
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(top = 4.dp),

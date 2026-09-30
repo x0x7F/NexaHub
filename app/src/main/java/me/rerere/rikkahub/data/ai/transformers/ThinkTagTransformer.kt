@@ -10,7 +10,7 @@ import kotlin.time.Instant
 
 private val THINKING_REGEX = Regex("\\A\\s*<think>([\\s\\S]*?)(</think>|$)")
 
-// 部分供应商不会返回reasoning parts, 所以需要这个transformer
+// Some providers don't return reasoning parts, so this transformer is needed
 object ThinkTagTransformer : OutputMessageTransformer {
     override suspend fun visualTransform(
         ctx: TransformerContext,

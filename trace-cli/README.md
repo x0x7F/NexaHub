@@ -1,9 +1,9 @@
 # trace-cli
 
-使用真实 Provider 的 SSE 响应生成 `ai` 模块可回放的 `events.jsonl`。CLI 只记录 SSE 分帧后的
-`id`、`event`、`data` 和 `retryMillis`，不会记录请求头或 API Key。
+Generates replayable `events.jsonl` files for the `ai` module from real provider SSE responses. The CLI only records
+the `id`, `event`, `data` and `retryMillis` after SSE framing; it never records request headers or API keys.
 
-支持的 Provider：
+Supported providers:
 
 - `openai-responses`
 - `openai-chat`
@@ -11,7 +11,7 @@
 - `google-generateContent`
 - `google-interactions`
 
-## 安装
+## Installation
 
 ```bash
 cd trace-cli
@@ -19,7 +19,7 @@ bun install
 cp .env.example .env
 ```
 
-在 `.env` 中填写需要使用的密钥：
+Fill in the keys you need in `.env`:
 
 ```dotenv
 OPENAI_API_KEY=...
@@ -28,41 +28,41 @@ GEMINI_API_KEY=...
 DEEPSEEK_API_KEY=...
 ```
 
-`.env` 已被子项目的 `.gitignore` 排除。也可以在单条 trace 中用 `apiKeyEnv`
-指定其他环境变量名。
+`.env` is excluded by the subproject's `.gitignore`. A single trace can also use `apiKeyEnv`
+to name a different environment variable.
 
-## 生成轨迹
+## Generating traces
 
-直接编辑 `traces.yml` 中需要录制的 Provider、模型和请求体。
+Edit the providers, models and request bodies to record directly in `traces.yml`.
 
-查看配置解析后的 case：
+List the cases after config resolution:
 
 ```bash
 bun run trace -- traces.yml --list
 ```
 
-检查脱敏后的实际请求，不访问网络：
+Inspect the redacted actual request without touching the network:
 
 ```bash
 bun run trace -- traces.yml --case openai-responses-tool --dry-run
 ```
 
-生成一条或全部轨迹：
+Generate one or all traces:
 
 ```bash
 bun run trace -- traces.yml --case openai-responses-tool
 bun run trace -- traces.yml
 ```
 
-默认不会覆盖已有文件。确认需要重新录制时使用：
+Existing files are not overwritten by default. When you do want to re-record, use:
 
 ```bash
 bun run trace -- traces.yml --case openai-responses-tool --force
 ```
 
-CLI 先写入临时文件，请求和 SSE 解析全部成功后再原子替换目标 `events.jsonl`。
+The CLI writes to a temp file first and atomically replaces the target `events.jsonl` only after the request and SSE parsing both succeed.
 
-## YAML 格式
+## YAML format
 
 ```yaml
 version: 1
@@ -76,14 +76,14 @@ traces:
     provider: openai-responses
     model: gpt-5.6
     apiKeyEnv: OPENAI_API_KEY
-    # 可选：覆盖 provider 默认认证方式，例如 OpenRouter Anthropic Messages 使用 Bearer。
+    # Optional: override the provider's default auth, e.g. OpenRouter Anthropic Messages uses Bearer.
     auth:
       header: Authorization
       scheme: Bearer
     baseUrl: https://api.openai.com/v1
-    # endpoint 可省略，也可以是相对 baseUrl 的路径或完整 URL。
+    # endpoint is optional; it can be a path relative to baseUrl or a full URL.
     endpoint: /responses
-    # output 可省略；默认写入 outputRoot/provider/name/events.jsonl。
+    # output is optional; defaults to outputRoot/provider/name/events.jsonl.
     output: ../ai/src/test/resources/stream-traces/openai-responses/responses-tool/events.jsonl
     headers: {}
     timeoutMs: 120000
@@ -105,10 +105,10 @@ traces:
             additionalProperties: false
 ```
 
-CLI 会自动添加各 Provider 所需的认证 Header，并为 OpenAI、Claude 和 Google Interactions
-请求强制设置 `stream: true`。`google-generateContent` 使用
-`:streamGenerateContent?alt=sse`，其模型名只用于 URL；`google-interactions` 使用
-`/interactions`，模型名会写入请求体。Interactions 也支持省略 `model`，直接在 `body.agent`
-中指定 Agent。
+The CLI automatically adds the auth headers each provider needs and forces `stream: true` for OpenAI, Claude and Google Interactions
+requests. `google-generateContent` uses
+`:streamGenerateContent?alt=sse`, and the model name is only used in the URL; `google-interactions` uses
+`/interactions`, and the model name is written into the request body. Interactions also supports omitting `model` and specifying the agent
+directly in `body.agent`.
 
-生成后仍需人工创建对应的 `expected.json`，再把目录加入 `StreamTraceReplayTest`。
+After generating, you still need to create the matching `expected.json` by hand and add the directory to `StreamTraceReplayTest`.

@@ -59,15 +59,15 @@ name	content:encoded
 tag	>
 	\n  
 tag	<
-name	note:标题
+name	note:título
 tag	 
 attr	xml:lang
 tag	=
-string	"zh"
+string	"es"
 tag	>
-	中文标签名
+	etiqueta
 tag	</
-name	note:标题
+name	note:título
 tag	>
 	\n  
 tag	<
@@ -116,7 +116,7 @@ tag	>
 	\n  
 comment	<!-- 
 doctag	TODO:
-comment	 补充更多字段 -->
+comment	 add more fields -->
 	\n
 tag	</
 name	rss

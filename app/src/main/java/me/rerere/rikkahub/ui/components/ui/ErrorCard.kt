@@ -64,7 +64,7 @@ fun ErrorCardsDisplay(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.End,
         ) {
-            // 清除全部按钮（当有多个错误时显示）
+            // Clear-all button (shown when there are multiple errors)
             if (errors.size > 1) {
                 Surface(
                     onClick = onClearAllErrors,
@@ -91,7 +91,7 @@ fun ErrorCardsDisplay(
                 }
             }
 
-            // 错误卡片列表
+            // Error card list
             errors.forEach { error ->
                 ErrorCard(
                     error = error,
@@ -114,7 +114,7 @@ fun ErrorCard(
     val checkFastModelSettings = stringResource(R.string.chat_page_check_fast_model_settings)
     val linkColor = MaterialTheme.colorScheme.primary
 
-    // 5 秒后自动消失
+    // Auto-dismiss after 5 seconds
     LaunchedEffect(error.id) {
         delay(5000)
         onDismiss()

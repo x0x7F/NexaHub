@@ -12,7 +12,7 @@ import me.rerere.rikkahub.data.db.entity.MessageNodeEntity
 
 @Dao
 interface MessageNodeDAO {
-    // 使用与 messages 相同的 JSON 编码，保守保留所有分支中出现的 URL。
+    // Uses the same JSON encoding as messages and conservatively keeps URLs that appear in any branch.
     @Query("SELECT EXISTS(SELECT 1 FROM message_node WHERE instr(messages, :encodedFileUrl) > 0)")
     suspend fun hasFileReference(encodedFileUrl: String): Boolean
 
@@ -44,7 +44,7 @@ interface MessageNodeDAO {
     @Query("DELETE FROM message_node WHERE id = :nodeId")
     suspend fun deleteById(nodeId: String)
 
-    // 使用 @RawQuery 绕过 Room 编译期校验，以便使用 json_each() 虚拟表
+    // Use @RawQuery to bypass Room's compile-time checks so the json_each() virtual table can be used
     @RawQuery
     suspend fun getTokenStatsRaw(query: SupportSQLiteQuery): MessageTokenStats
 
@@ -61,11 +61,11 @@ data class MessageTokenStats(
 
 data class MessageDayCount(val day: String, val count: Int)
 
-// 在 json_each() 的参数内校验 JSON，避免损坏行导致整个统计查询失败。
-// 使用 CASE 而非依赖 WHERE 条件的求值顺序，无效 JSON 按空数组处理。
+// Validate the JSON inside json_each()'s argument so a corrupted row doesn't fail the whole stats query.
+// Use CASE rather than relying on the evaluation order of WHERE conditions; invalid JSON is treated as an empty array.
 private const val VALID_MESSAGES_JSON = "CASE WHEN json_valid(mn.messages) THEN mn.messages ELSE '[]' END"
 
-// SQLite json_each() 展开 messages JSON 数组，json_extract() 提取 Token 字段并聚合
+// SQLite json_each() expands the messages JSON array, and json_extract() extracts and aggregates the token fields
 private val TOKEN_STATS_SQL = SimpleSQLiteQuery(
     "SELECT COUNT(*) AS totalMessages, " +
         "COALESCE(SUM(CAST(json_extract(j.value, '$.usage.promptTokens') AS INTEGER)), 0) AS promptTokens, " +
@@ -76,7 +76,7 @@ private val TOKEN_STATS_SQL = SimpleSQLiteQuery(
 
 suspend fun MessageNodeDAO.getTokenStats(): MessageTokenStats = getTokenStatsRaw(TOKEN_STATS_SQL)
 
-// 按用户消息的 createdAt 字段（LocalDateTime ISO 字符串前10位即日期）统计每日消息数
+// Count daily messages by the user message's createdAt field (the first 10 chars of the LocalDateTime ISO string are the date)
 suspend fun MessageNodeDAO.getMessageCountPerDay(startDate: String): List<MessageDayCount> =
     getMessageCountPerDayRaw(
         SimpleSQLiteQuery(

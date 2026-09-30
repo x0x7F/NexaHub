@@ -1,8 +1,8 @@
 package me.rerere.rikkahub.data.ai.tools
 
 /**
- * workspace_edit_file 使用的文本替换器, 按 [WorkspaceEditReplacers] 顺序逐级尝试,
- * 前一级找不到任何匹配时才会降级到下一级更宽松的匹配策略。
+ * Text replacers used by workspace_edit_file, tried in [WorkspaceEditReplacers] order;
+ * a looser matching strategy is only used when the previous one finds no match.
  */
 interface TextReplacer {
     val name: String
@@ -30,8 +30,8 @@ val WorkspaceEditReplacers: List<TextReplacer> = listOf(
 )
 
 /**
- * 逐级尝试 [replacers], 使用第一个产生匹配的替换器。
- * 匹配多处且 [replaceAll] 为 false 时抛出 [IllegalArgumentException], 而不是猜测替换哪一处。
+ * Try [replacers] in order and use the first one that produces a match.
+ * When there are multiple matches and [replaceAll] is false, throws [IllegalArgumentException] instead of guessing which one to replace.
  */
 fun replaceText(
     content: String,
@@ -73,7 +73,7 @@ fun replaceText(
 }
 
 /**
- * 第一级: 精确匹配, 非重叠计数, 与 String.replace 语义一致。
+ * Level 1: exact match with non-overlapping counting, same semantics as String.replace.
  */
 object ExactReplacer : TextReplacer {
     override val name: String = "exact"
@@ -90,20 +90,20 @@ object ExactReplacer : TextReplacer {
 }
 
 /**
- * 行级窗口匹配的公共骨架: 把 content 与 old_text 拆成行, 滑动比较窗口,
- * 命中后以匹配处首行的真实缩进重排 new_text。
+ * Common skeleton for line-window matching: split content and old_text into lines, compare a sliding window,
+ * and on a hit re-indent new_text using the real indentation of the first matched line.
  */
 abstract class LineWindowReplacer : TextReplacer {
 
     protected abstract fun windowMatches(windowTrimmed: List<String>, oldTrimmed: List<String>): Boolean
 
-    /** old_text 全为空白行时禁用宽松匹配, 避免命中任意空白区域 */
+    /** Loose matching is disabled when old_text is all blank lines, to avoid matching arbitrary whitespace */
     protected open fun isApplicable(oldTrimmed: List<String>): Boolean =
         oldTrimmed.any { it.isNotEmpty() }
 
     override fun findMatches(content: String, oldText: String, newText: String): List<TextReplacer.Match> {
         val rawOldLines = oldText.lines()
-        // "foo\n" 语义上是一行, 去掉行尾换行产生的空尾行, new_text 同步处理保持对称
+        // "foo\n" is semantically one line; drop the empty trailing line from the final newline, and do the same for new_text to keep them symmetric
         val dropTrailingEmpty = rawOldLines.size > 1 && rawOldLines.last().isEmpty()
         val oldLines = if (dropTrailingEmpty) rawOldLines.dropLast(1) else rawOldLines
         val oldTrimmed = oldLines.map { it.trim() }
@@ -132,7 +132,7 @@ abstract class LineWindowReplacer : TextReplacer {
 }
 
 /**
- * 第二级: 逐行 trim 后比较, 容忍缩进/行尾空白/CRLF 差异。
+ * Level 2: compare line by line after trimming, tolerating indentation / trailing whitespace / CRLF differences.
  */
 object LineTrimmedReplacer : LineWindowReplacer() {
     override val name: String = "line_trimmed"
@@ -142,7 +142,7 @@ object LineTrimmedReplacer : LineWindowReplacer() {
 }
 
 /**
- * 第三级: old_text 至少 3 行时, 仅用首尾行做锚点匹配, 容忍中间行的细微差异。
+ * Level 3: when old_text has at least 3 lines, match using only the first and last lines as anchors, tolerating small differences in the middle lines.
  */
 object BlockAnchorReplacer : LineWindowReplacer() {
     override val name: String = "block_anchor"

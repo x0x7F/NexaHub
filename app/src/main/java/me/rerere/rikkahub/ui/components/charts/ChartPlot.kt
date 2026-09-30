@@ -30,7 +30,7 @@ import kotlin.math.min
 
 private class ChartGeometry(
     val yScale: ChartAxisScale,
-    val xScale: ChartAxisScale?, // 仅散点图
+    val xScale: ChartAxisScale?, // Scatter charts only
     val categoryCount: Int,
 )
 
@@ -59,7 +59,7 @@ private fun ChartSpec.buildGeometry(): ChartGeometry = when (style) {
     else -> ChartGeometry(
         yScale = buildAxisScale(
             values = series.flatMap { it.values },
-            // 柱状图始终从 0 开始, 忽略 min/max
+            // Bar charts always start at 0, ignoring min/max
             userMin = if (style == ChartStyle.Bar) null else yAxis.min,
             userMax = if (style == ChartStyle.Bar) null else yAxis.max,
             log = yAxis.scale == ChartScaleType.Log,
@@ -71,7 +71,7 @@ private fun ChartSpec.buildGeometry(): ChartGeometry = when (style) {
 }
 
 /**
- * 图表绘制区域: 坐标轴刻度、网格线以及数据
+ * Chart plot area: axis ticks, grid lines and data
  */
 @Composable
 internal fun ChartPlot(
@@ -118,7 +118,7 @@ internal fun ChartPlot(
 
         fun yToPx(value: Double) = plot.bottom - yScale.fraction(value) * plot.height
 
-        // 水平网格线与 Y 轴刻度
+        // Horizontal grid lines and Y-axis ticks
         yScale.ticks.forEachIndexed { index, tick ->
             val y = yToPx(tick)
             drawLine(gridColor, Offset(plot.left, y), Offset(plot.right, y), strokeWidth = 1.dp.toPx())
@@ -153,7 +153,7 @@ internal fun ChartPlot(
                 xScale ?: return@Canvas
                 fun xToPx(value: Double) = plot.left + xScale.fraction(value) * plot.width
 
-                // 垂直网格线与 X 轴刻度
+                // Vertical grid lines and X-axis ticks
                 xScale.ticks.forEachIndexed { index, tick ->
                     val x = xToPx(tick)
                     drawLine(gridColor, Offset(x, plot.top), Offset(x, plot.bottom), 1.dp.toPx())
@@ -184,7 +184,7 @@ internal fun ChartPlot(
     }
 }
 
-/** 将标签的左边界限制在画布内; 标签比画布宽时贴左对齐, 保证区间有效 */
+/** Clamp a label's left edge within the canvas; when the label is wider than the canvas, align it left so the range stays valid */
 private fun DrawScope.clampLabelX(left: Float, labelWidth: Int): Float =
     left.coerceIn(0f, max(0f, size.width - labelWidth))
 
@@ -198,10 +198,10 @@ private fun DrawScope.drawCategoryLabels(
 ) {
     val count = spec.categoryCount
     val gap = 8.dp.toPx()
-    // 标签过密时间隔显示
+    // Show labels at intervals when they're too dense
     val widest = (0 until count).maxOf { textMeasurer.measure(spec.categoryLabel(it), style, maxLines = 1).size.width }
     val stride = max(1, ceil((widest + gap) / slot).toInt())
-    // 单个标签比整个画布还宽时 stride 也无法兜住, 需再限制在画布宽度内, 否则省略号不生效
+    // A single label wider than the whole canvas can't be handled by stride, so also clamp it to the canvas width, otherwise the ellipsis won't apply
     val maxWidth = (slot * stride - gap).coerceAtMost(size.width).toInt().coerceAtLeast(1)
     for (index in 0 until count step stride) {
         val label: TextLayoutResult = textMeasurer.measure(
@@ -255,7 +255,7 @@ private fun DrawScope.drawBars(
                     top = min(valueY, baselineY),
                     right = left + barWidth,
                     bottom = max(valueY, baselineY),
-                    // 圆角只加在远离基线的一端
+                    // Only round the end away from the baseline
                     topLeftCornerRadius = if (positive) radius else CornerRadius.Zero,
                     topRightCornerRadius = if (positive) radius else CornerRadius.Zero,
                     bottomRightCornerRadius = if (positive) CornerRadius.Zero else radius,

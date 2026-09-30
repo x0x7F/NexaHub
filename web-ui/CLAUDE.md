@@ -4,39 +4,39 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Project Overview
 
-web-ui 是 RikkaHub 项目的嵌入式 Web 前端，基于 React Router 7 的单页应用（SPA）。构建产物通过 `copy.ts` 脚本复制到 `../web/src/main/resources/static` 目录，由 Kotlin 后端的 Ktor 服务器提供静态文件服务。
+web-ui is the embedded web frontend of the NexaHub project, a single-page app (SPA) built on React Router 7. The build output is copied by the `copy.ts` script into `../web/src/main/resources/static`, where the Kotlin backend's Ktor server serves it as static files.
 
 ## Technology Stack
 
-- **React Router 7** (7.12.0): 文件路由系统 + Vite 构建 (SPA 模式: `ssr: false`)
-- **React 19** (19.2.4): UI 框架
-- **TypeScript** (5.9.2): 严格类型检查，与 Kotlin 后端类型完全对齐
-- **Tailwind CSS v4**: 原子化 CSS 框架 + CSS 变量主题系统
-- **shadcn/ui** (New York style): 组件库，基于 Radix UI
-- **Zustand** (5.0.11): 轻量级状态管理（组合 slices 模式）
-- **ky** (1.14.3): 基于 fetch 的 HTTP 客户端
-- **i18next + react-i18next**: 国际化方案（zh-CN / en-US）
-- **pnpm**: 包管理器
+- **React Router 7** (7.12.0): file-based routing + Vite build (SPA mode: `ssr: false`)
+- **React 19** (19.2.4): UI framework
+- **TypeScript** (5.9.2): strict type checking, fully aligned with the Kotlin backend types
+- **Tailwind CSS v4**: utility-first CSS framework + CSS variable theming
+- **shadcn/ui** (New York style): component library based on Radix UI
+- **Zustand** (5.0.11): lightweight state management (composed slices pattern)
+- **ky** (1.14.3): fetch-based HTTP client
+- **i18next + react-i18next**: internationalization (en-US)
+- **pnpm**: package manager
 
 ## Development Commands
 
 ```bash
-# 开发服务器 (HMR + API 代理到 localhost:8080)
+# Dev server (HMR + API proxied to localhost:8080)
 pnpm run dev
 
-# 生产构建 (构建 + 复制到后端)
+# Production build (build + copy to the backend)
 pnpm run build
 
-# 类型检查和生成
+# Type generation and checking
 pnpm run typecheck
 
-# 代码格式化
+# Format code
 pnpm run fmt
 
-# 检查格式
+# Check formatting
 pnpm run fmt:check
 
-# 生产服务器 (运行 build/server/index.js)
+# Production server (runs build/server/index.js)
 pnpm run start
 ```
 
@@ -46,46 +46,46 @@ pnpm run start
 
 ```
 app/
-├── routes/                   # React Router 7 文件路由
-│   ├── home.tsx             # / 路由 (re-exports conversations.tsx)
-│   ├── c.$id.tsx            # /c/:id 路由 (re-exports conversations.tsx)
-│   └── conversations.tsx     # 主对话页面实现 (650+ 行)
+├── routes/                   # React Router 7 file routes
+│   ├── home.tsx             # / route (re-exports conversations.tsx)
+│   ├── c.$id.tsx            # /c/:id route (re-exports conversations.tsx)
+│   └── conversations.tsx     # Main conversation page implementation (650+ lines)
 │
-├── components/               # 组件库
-│   ├── ui/                   # shadcn/ui 基础组件 (36+ 组件)
-│   ├── message/              # 消息相关组件 (chat-message, parts/)
-│   ├── markdown/             # Markdown 渲染 (markdown.tsx + code-block.tsx)
-│   ├── input/                # 输入组件 (chat-input, model-list, pickers)
-│   ├── workbench/            # 代码执行工作台
-│   ├── extended/             # 扩展组件 (conversation, infinite-scroll-area)
-│   ├── conversation-sidebar.tsx      # 对话列表侧边栏
+├── components/               # Components
+│   ├── ui/                   # shadcn/ui base components (36+ components)
+│   ├── message/              # Message components (chat-message, parts/)
+│   ├── markdown/             # Markdown rendering (markdown.tsx + code-block.tsx)
+│   ├── input/                # Input components (chat-input, model-list, pickers)
+│   ├── workbench/            # Code execution workbench
+│   ├── extended/             # Extended components (conversation, infinite-scroll-area)
+│   ├── conversation-sidebar.tsx      # Conversation list sidebar
 │   ├── conversation-search-button.tsx
 │   ├── conversation-quick-jump.tsx
 │   ├── custom-theme-dialog.tsx
 │   └── theme-provider.tsx
 │
-├── stores/                   # Zustand 状态管理 (组合 slices)
-│   ├── app-store.ts          # 主 store (组合所有 slices)
-│   ├── settings.ts           # 导出 useSettingsStore
-│   ├── chat-input.ts         # 导出 useChatInputStore
+├── stores/                   # Zustand state management (composed slices)
+│   ├── app-store.ts          # Main store (composes all slices)
+│   ├── settings.ts           # Exports useSettingsStore
+│   ├── chat-input.ts         # Exports useChatInputStore
 │   ├── slices/
-│   │   ├── types.ts          # Store 类型定义
-│   │   ├── settings-slice.ts # 设置 slice (从 SSE 更新)
-│   │   └── chat-input-slice.ts # 聊天输入 slice (多对话草稿)
+│   │   ├── types.ts          # Store type definitions
+│   │   ├── settings-slice.ts # Settings slice (updated from SSE)
+│   │   └── chat-input-slice.ts # Chat input slice (per-conversation drafts)
 │   └── hooks/
-│       └── use-settings-subscription.ts # SSE 订阅设置流
+│       └── use-settings-subscription.ts # SSE subscription to the settings stream
 │
-├── hooks/                    # 自定义 React Hooks
-│   ├── use-conversation-list.ts  # 对话列表管理 (分页/实时更新)
-│   ├── use-current-assistant.ts  # 当前助手信息
-│   ├── use-current-model.ts      # 当前模型信息
-│   ├── use-mobile.ts             # 移动设备检测
-│   └── use-picker-popover.ts     # Picker 气泡管理
+├── hooks/                    # Custom React hooks
+│   ├── use-conversation-list.ts  # Conversation list management (paging/live updates)
+│   ├── use-current-assistant.ts  # Current assistant info
+│   ├── use-current-model.ts      # Current model info
+│   ├── use-mobile.ts             # Mobile device detection
+│   └── use-picker-popover.ts     # Picker popover management
 │
-├── services/                 # API 服务层
-│   └── api.ts                # ky HTTP 客户端 + SSE 实现 (176 行)
+├── services/                 # API service layer
+│   └── api.ts                # ky HTTP client + SSE implementation (176 lines)
 │
-├── types/                    # TypeScript 类型 (与 Kotlin 对齐)
+├── types/                    # TypeScript types (aligned with Kotlin)
 │   ├── core.ts               # MessageRole, TokenUsage
 │   ├── parts.ts              # UIMessagePart (union of 7 part types)
 │   ├── annotations.ts        # UIMessageAnnotation (UrlCitationAnnotation)
@@ -93,56 +93,52 @@ app/
 │   ├── conversation.ts       # MessageNode, Conversation
 │   ├── dto.ts                # API DTOs (ConversationDto, MessageDto, etc.)
 │   ├── settings.ts           # Settings, DisplaySetting, AssistantProfile, etc.
-│   ├── helpers.ts            # 类型守卫和工具函数
-│   └── index.ts              # 统一导出
+│   ├── helpers.ts            # Type guards and helpers
+│   └── index.ts              # Barrel exports
 │
-├── lib/                      # 工具函数
+├── lib/                      # Utilities
 │   ├── utils.ts              # cn() - Tailwind + clsx
-│   ├── display.ts            # 显示名称格式化
-│   ├── files.ts              # 文件 URL 转换
-│   └── error.ts              # 错误处理
+│   ├── display.ts            # Display name formatting
+│   ├── files.ts              # File URL conversion
+│   └── error.ts              # Error handling
 │
-├── locales/                  # 国际化语言文件（命名空间组织）
-│   ├── zh-CN/                # 简体中文（默认语言）
-│   │   ├── common.json       # 通用 UI 翻译（侧边栏、主题等）
-│   │   ├── input.json        # 输入相关翻译（聊天、模型选择）
-│   │   ├── markdown.json     # Markdown 渲染翻译
-│   │   └── message.json      # 消息显示翻译（消息部分、工具）
-│   └── en-US/                # 英文
-│       ├── common.json
-│       ├── input.json
-│       ├── markdown.json
-│       └── message.json
+├── locales/                  # Translation files (organized by namespace)
+│   └── en-US/
+│       ├── common.json       # Common UI (sidebar, theme, etc.)
+│       ├── input.json        # Input (chat, model picker)
+│       ├── markdown.json     # Markdown rendering
+│       ├── message.json      # Message display (message parts, tools)
+│       └── page.json
 │
-├── assets/                   # 静态资源
-├── i18n.ts                   # i18next 配置
-├── root.tsx                  # 根布局 (调用 useSettingsSubscription)
-├── routes.ts                 # 路由配置 (type-safe)
-└── app.css                   # 全局样式 (Tailwind + CSS 变量)
+├── assets/                   # Static assets
+├── i18n.ts                   # i18next configuration
+├── root.tsx                  # Root layout (calls useSettingsSubscription)
+├── routes.ts                 # Route configuration (type-safe)
+└── app.css                   # Global styles (Tailwind + CSS variables)
 ```
 
 ### Key Concepts
 
-#### Type System (与 Kotlin 后端完全对齐)
+#### Type System (fully aligned with the Kotlin backend)
 
-所有 `app/types/` 下的类型与 Kotlin 后端严格对应：
+Every type under `app/types/` corresponds strictly to a Kotlin backend type:
 
-| TypeScript 类型 | Kotlin 类型 | 后端位置 |
+| TypeScript type | Kotlin type | Backend location |
 |----------------|------------|---------|
-| `MessageRole` | `MessageRole` | `ai/src/main/java/me/rerere/ai/core/MessageRole.kt` |
-| `TokenUsage` | `Usage` | `ai/src/main/java/me/rerere/ai/core/Usage.kt` |
-| `UIMessagePart` | `UIMessagePart` | `ai/src/main/java/me/rerere/ai/ui/Message.kt` |
-| `UIMessage` | `UIMessage` | `ai/src/main/java/me/rerere/ai/ui/Message.kt` |
-| `MessageNode` | `MessageNode` | `app/src/main/java/me/rerere/rikkahub/data/model/Conversation.kt` |
-| `Conversation` | `Conversation` | `app/src/main/java/me/rerere/rikkahub/data/model/Conversation.kt` |
-| `ConversationDto` | `ConversationDto` | `app/src/main/java/me/rerere/rikkahub/web/dto/WebDto.kt` |
-| `Settings` | `Settings` | `app/src/main/java/me/rerere/rikkahub/data/datastore/PreferencesStore.kt` |
+| `MessageRole` | `MessageRole` | `ai/src/main/java/me/ray/nexahub/ai/core/MessageRole.kt` |
+| `TokenUsage` | `Usage` | `ai/src/main/java/me/ray/nexahub/ai/core/Usage.kt` |
+| `UIMessagePart` | `UIMessagePart` | `ai/src/main/java/me/ray/nexahub/ai/ui/Message.kt` |
+| `UIMessage` | `UIMessage` | `ai/src/main/java/me/ray/nexahub/ai/ui/Message.kt` |
+| `MessageNode` | `MessageNode` | `app/src/main/java/me/ray/nexahub/data/model/Conversation.kt` |
+| `Conversation` | `Conversation` | `app/src/main/java/me/ray/nexahub/data/model/Conversation.kt` |
+| `ConversationDto` | `ConversationDto` | `app/src/main/java/me/ray/nexahub/web/dto/WebDto.kt` |
+| `Settings` | `Settings` | `app/src/main/java/me/ray/nexahub/data/datastore/PreferencesStore.kt` |
 
-**类型更新时需同步修改前后端！**
+**When a type changes, update both the frontend and the backend!**
 
-#### Message Parts (消息部分)
+#### Message Parts
 
-消息由多个 `UIMessagePart` 组成（联合类型），支持混合内容：
+A message is made of several `UIMessagePart`s (a union type), supporting mixed content:
 
 ```typescript
 type UIMessagePart =
@@ -155,65 +151,65 @@ type UIMessagePart =
   | ToolPart         // { type: "tool", toolCallId, input, output, approvalState }
 ```
 
-每个 part 由独立的组件渲染 (`app/components/message/parts/`)。
+Each part is rendered by its own component (`app/components/message/parts/`).
 
-#### Message Branching (消息分支)
+#### Message Branching
 
-`MessageNode` 支持对话分支，每个节点包含多个可选消息：
+`MessageNode` supports conversation branching; each node holds several alternative messages:
 
 ```typescript
 interface MessageNode {
   id: string;
-  messages: UIMessage[];     // 多个可选分支
-  selectIndex: number;       // 当前选中的分支
+  messages: UIMessage[];     // Alternative branches
+  selectIndex: number;       // Currently selected branch
 }
 ```
 
-用户可以：
-- 重新生成响应创建新分支
-- 在不同分支间切换
-- 编辑消息创建分叉
+Users can:
+- Regenerate a response to create a new branch
+- Switch between branches
+- Edit a message to fork
 
 #### State Management (Zustand Slices)
 
-采用组合 slices 模式，所有 slices 共享同一个 store：
+Uses the composed slices pattern; all slices share one store:
 
 ```typescript
 // app-store.ts
 const useAppStore = create<AppStoreState>()((...args) => ({
-  ...createSettingsSlice(...args),      // 全局设置
-  ...createChatInputSlice(...args),     // 聊天输入
+  ...createSettingsSlice(...args),      // Global settings
+  ...createChatInputSlice(...args),     // Chat input
 }));
 
-// 导出特定的 store hook
+// Export specific store hooks
 export const useSettingsStore = useAppStore;
 export const useChatInputStore = useAppStore;
 ```
 
 **Settings Slice**:
-- 从后端 SSE 流 (`/api/settings/stream`) 实时更新
-- 包含助手、模型、提供商、显示设置等全局配置
-- 在 `root.tsx` 中通过 `useSettingsSubscription` 订阅
+- Updated live from the backend SSE stream (`/api/settings/stream`)
+- Holds global config such as assistants, models, providers and display settings
+- Subscribed in `root.tsx` via `useSettingsSubscription`
 
 **Chat Input Slice**:
-- 为每个对话维护独立的输入草稿
-- 支持文本 + 多媒体附件（图片、视频、音频、文档）
-- 编辑消息时保存源部分用于对比
+- Keeps a separate input draft per conversation
+- Supports text + media attachments (images, videos, audio, documents)
+- Keeps the source parts when editing a message, for comparison
 
 #### API Client (app/services/api.ts)
 
-基于 `ky` 的 HTTP 客户端，支持 REST API 和 SSE 流：
+`ky`-based HTTP client supporting REST APIs and SSE streams:
 
 ```typescript
 // REST API
 await api.get<T>(url, options)
 await api.post<T>(url, data, options)
-await api.postMultipart<T>(url, formData)  // 文件上传
+await api.postMultipart<T>(url, formData)  // File upload
 await api.put<T>(url, data)
 await api.patch<T>(url, data)
 await api.delete<T>(url, options)
 
-// SSE 流 (手动实现，支持事件类型和多行数据)
+// SSE stream (hand-written, supports event types and multi-line data)
 sse<T>(url, {
   onMessage: ({ data, event, id }) => { ... },
   onError: (error) => { ... },
@@ -222,12 +218,12 @@ sse<T>(url, {
 }, { signal: abortController.signal })
 ```
 
-**配置**:
-- 默认前缀: `/api` (开发时代理到 `http://localhost:8080`)
-- 超时: 30 秒
-- 自动错误处理: 转换为 `ApiError` 类
+**Configuration**:
+- Default prefix: `/api` (proxied to `http://localhost:8080` in development)
+- Timeout: 30 seconds
+- Automatic error handling: converted to the `ApiError` class
 
-**开发时代理** (`vite.config.ts`):
+**Dev proxy** (`vite.config.ts`):
 ```typescript
 server: {
   proxy: {
@@ -242,125 +238,88 @@ server: {
 #### Routing (React Router 7)
 
 ```typescript
-// app/routes.ts - 类型安全的路由配置
+// app/routes.ts - type-safe route config
 [
-  index("routes/home.tsx"),           // / 路由
-  route("c/:id", "routes/c.$id.tsx")  // /c/:id 路由
+  index("routes/home.tsx"),           // / route
+  route("c/:id", "routes/c.$id.tsx")  // /c/:id route
 ]
 ```
 
-**特点**:
-- SPA 模式 (`react-router.config.ts: ssr: false`)
-- 文件路由自动类型生成 (`.react-router/types/`)
-- 实际 UI 在 `routes/conversations.tsx` 实现，其他路由文件 re-export
-- 错误边界和加载占位符在 `root.tsx`
+**Notes**:
+- SPA mode (`react-router.config.ts: ssr: false`)
+- Route types are generated automatically (`.react-router/types/`)
+- The actual UI lives in `routes/conversations.tsx`; the other route files re-export it
+- Error boundaries and loading placeholders are in `root.tsx`
 
 #### Internationalization (i18next)
 
-**支持语言**: zh-CN (默认), en-US
+**Supported languages**: en-US
 
-**命名空间组织** (`app/i18n.ts`):
-翻译文件按功能模块拆分为多个命名空间,避免单一文件过大:
-- `common`: 通用 UI 翻译(侧边栏、主题、快捷跳转等)
-- `input`: 输入相关翻译(聊天输入、模型选择、文件选择器等)
-- `markdown`: Markdown 渲染翻译(代码块、复制按钮等)
-- `message`: 消息显示翻译(消息部分、工具调用、推理步骤等)
+**Namespaces** (`app/i18n.ts`):
+Translations are split into namespaces by feature to keep files small:
+- `common`: common UI (sidebar, theme, quick jump, etc.)
+- `input`: input (chat input, model picker, file picker, etc.)
+- `markdown`: Markdown rendering (code blocks, copy button, etc.)
+- `message`: message display (message parts, tool calls, reasoning steps, etc.)
+- `page`: page-level strings
 
-**配置** (`app/i18n.ts`):
-```typescript
-// 语言检测优先级: localStorage > 浏览器语言 > 默认中文
-const fromStorage = window.localStorage.getItem("lang");
-const browserLanguage = window.navigator.language;
-const initialLanguage = fromStorage || (browserLanguage.startsWith("zh") ? "zh-CN" : "en-US");
-
-// 命名空间配置
-i18n.use(initReactI18next).init({
-  resources: {
-    "zh-CN": {
-      common: zhCNCommon,
-      input: zhCNInput,
-      markdown: zhCNMarkdown,
-      message: zhCNMessage,
-    },
-    "en-US": { /* ... */ },
-  },
-  defaultNS: "common",  // 默认命名空间
-  ns: ["common", "input", "markdown", "message"],
-});
-```
-
-**翻译文件结构**:
-```
-app/locales/
-├── zh-CN/
-│   ├── common.json     # 通用翻译
-│   ├── input.json      # 输入相关
-│   ├── markdown.json   # Markdown 渲染
-│   └── message.json    # 消息显示
-└── en-US/
-    ├── common.json
-    ├── input.json
-    ├── markdown.json
-    └── message.json
-```
-
-**使用方式**:
+**Usage**:
 ```typescript
 import { useTranslation } from "react-i18next";
 
 function MyComponent() {
-  // 默认命名空间 (common)
+  // Default namespace (common)
   const { t } = useTranslation();
   return <div>{t("chat.send_hint_enter")}</div>;
 
-  // 指定命名空间
+  // Specific namespace
   const { t: tInput } = useTranslation("input");
   return <div>{tInput("model_list.title")}</div>;
 
-  // 使用命名空间前缀 (推荐)
+  // Namespace prefix (recommended)
   return <div>{t("input:model_list.title")}</div>;
 }
 ```
 
-**添加新翻译键**:
-1. 确定合适的命名空间 (common/input/markdown/message)
-2. 在对应的 `zh-CN/*.json` 和 `en-US/*.json` 中添加键值对
-3. 使用 `t("namespace:key")` 或 `t("key")` (默认命名空间) 访问
+**Adding a translation key**:
+1. Pick the right namespace (common/input/markdown/message/page)
+2. Add the key to the matching `en-US/*.json`
+3. Access it with `t("namespace:key")` or `t("key")` (default namespace)
 
 ## Build Process
 
-构建分为两个阶段：
+The build has two stages:
 
 ### 1. React Router Build
 
 ```bash
 react-router build
-# 输出:
-#  - build/client/  → 静态资源 (HTML + JS + CSS)
-#  - build/server/  → SSR 服务器代码 (SPA 模式下不使用)
+# Output:
+#  - build/client/  → static assets (HTML + JS + CSS)
+#  - build/server/  → SSR server code (unused in SPA mode)
 ```
 
 ### 2. Copy to Backend
 
 ```bash
 pnpm run copy.ts
-# 将 build/client/ 复制到 ../web/src/main/resources/static/
-# Kotlin 后端的 Ktor 服务器从该目录提供静态文件服务
+# Copies build/client/ to ../web/src/main/resources/static/
+# The Kotlin backend's Ktor server serves static files from that directory
 ```
 
-**完整构建命令**: `pnpm run build` (执行上述两步)
+**Full build command**: `pnpm run build` (runs both steps)
 
 ## Development Guidelines
 
 ### Component Development
 
-**shadcn/ui 组件**:
-- 从 `~/components/ui/` 导入基础组件
-- 样式: New York 风格 (`components.json: style: "new-york"`)
-- 图标: `import { IconName } from "lucide-react"`
-- 路径别名: `~` → `app/` 目录
+**shadcn/ui components**:
+- Import base components from `~/components/ui/`
+- Style: New York (`components.json: style: "new-york"`)
+- Icons: `import { IconName } from "lucide-react"`
+- Path alias: `~` → the `app/` directory
 
-**组件模式**:
+**Component pattern**:
 ```typescript
 import type { ComponentProps } from "react";
 
@@ -376,186 +335,186 @@ export function MyComponent({ value, onChange, ...props }: MyComponentProps) {
 
 ### State Management Patterns
 
-**全局状态 (Zustand)**:
+**Global state (Zustand)**:
 ```typescript
-// 读取状态
+// Read state
 const settings = useSettingsStore((state) => state.settings);
 const currentModelId = useSettingsStore((state) => state.settings?.currentModelId);
 
-// 更新状态
+// Update state
 const setSettings = useSettingsStore((state) => state.setSettings);
 const setText = useChatInputStore((state) => state.setText);
 
-// 使用选择器避免不必要的重新渲染
+// Use selectors to avoid unnecessary re-renders
 const currentAssistant = useSettingsStore(
   (state) => state.settings?.assistants.find(a => a.id === state.settings?.currentAssistantId)
 );
 ```
 
-**本地状态**:
+**Local state**:
 ```typescript
-// UI 特定的状态使用 useState
+// Use useState for UI-specific state
 const [isOpen, setIsOpen] = useState(false);
 const [selectedIndex, setSelectedIndex] = useState(0);
 ```
 
 ### Markdown Rendering
 
-`app/components/markdown/markdown.tsx` 提供增强的 Markdown 渲染：
+`app/components/markdown/markdown.tsx` provides enhanced Markdown rendering:
 
-**特性**:
-- **LaTeX 数学公式**: 内联 `\(...\)` 和块 `\[...\]` (转换为 `$...$` 和 `$$...$$`)
-- **GFM 支持**: 表格、删除线、任务列表等
-- **代码高亮**: 基于 Shiki，带复制按钮
-- **`<think>` 标签**: 转换为引用块样式
-- **引用链接**: `[citation,domain](id)` 格式处理
-- **主题适配**: 亮色/暗色主题自动切换
+**Features**:
+- **LaTeX math**: inline `\(...\)` and block `\[...\]` (converted to `$...$` and `$$...$$`)
+- **GFM support**: tables, strikethrough, task lists, etc.
+- **Code highlighting**: Shiki-based, with a copy button
+- **`<think>` tags**: rendered as blockquotes
+- **Citation links**: handles the `[citation,domain](id)` format
+- **Theming**: switches automatically between light and dark themes
 
-**预处理流程**:
-1. 查找所有代码块位置（避免在代码块内替换）
-2. 替换 LaTeX 语法和 `<think>` 标签
-3. 传递给 `react-markdown` + rehype 插件
+**Preprocessing**:
+1. Find all code block positions (to avoid replacing inside code blocks)
+2. Replace LaTeX syntax and `<think>` tags
+3. Pass to `react-markdown` + rehype plugins
 
 ### Message Component System
 
-消息渲染采用分发器模式：
+Message rendering uses a dispatcher pattern:
 
 ```
-ChatMessage (容器)
-  └── MessageParts (遍历 parts 数组)
-      └── MessagePart (分发器 - 根据 part.type)
+ChatMessage (container)
+  └── MessageParts (iterates the parts array)
+      └── MessagePart (dispatcher - by part.type)
           ├── TextPart
           ├── ImagePart
           ├── VideoPart
           ├── AudioPart
           ├── DocumentPart
-          ├── ReasoningPart (支持展开推理步骤)
-          └── ToolPart (支持工具调用展示和批准)
+          ├── ReasoningPart (expandable reasoning steps)
+          └── ToolPart (tool call display and approval)
 ```
 
-**添加新 Part 类型**:
-1. 在 `app/types/parts.ts` 添加类型定义
-2. 在 Kotlin 后端同步添加 (`ai/.../ui/Message.kt`)
-3. 在 `app/components/message/parts/` 创建组件
-4. 在 `app/components/message/message-part.tsx` 添加分发逻辑
-5. 在 `app/types/helpers.ts` 添加类型守卫
+**Adding a new part type**:
+1. Add the type definition in `app/types/parts.ts`
+2. Add it to the Kotlin backend too (`ai/.../ui/Message.kt`)
+3. Create the component in `app/components/message/parts/`
+4. Add the dispatch logic in `app/components/message/message-part.tsx`
+5. Add a type guard in `app/types/helpers.ts`
 
 ### File URL Handling
 
-`app/lib/files.ts` 提供 URL 转换逻辑：
+`app/lib/files.ts` provides URL conversion:
 
 ```typescript
 resolveFileUrl(url: string): string
-// 处理:
-// - data: URL (base64) → 直接返回
-// - http/https → 直接返回
+// Handles:
+// - data: URL (base64) → returned as-is
+// - http/https → returned as-is
 // - file:// (Android) → /api/files/path/...
-// - 相对路径 → /api/files/path/...
+// - relative path → /api/files/path/...
 ```
 
-在 `ImagePart`, `VideoPart`, `AudioPart`, `DocumentPart` 中使用该函数解析 URL。
+Used by `ImagePart`, `VideoPart`, `AudioPart` and `DocumentPart` to resolve URLs.
 
 ### Type Safety
 
-**严格类型检查**:
+**Strict type checking**:
 ```bash
-pnpm run typecheck  # React Router 类型生成 + tsc 检查
+pnpm run typecheck  # React Router type generation + tsc
 ```
 
-**与 Kotlin 同步**:
-- 修改 `app/types/` 下任何类型时，必须同步更新 Kotlin 后端
-- 参考上方的类型映射表确定对应的 Kotlin 文件
-- 运行 `pnpm run typecheck` 确保前端类型正确
+**Keeping in sync with Kotlin**:
+- Any change to a type under `app/types/` must also be made in the Kotlin backend
+- Use the type mapping table above to find the matching Kotlin file
+- Run `pnpm run typecheck` to make sure the frontend types are correct
 
 ### Data Flow and Real-time Communication
 
-#### 应用启动流程
+#### App startup
 
 ```
-root.tsx 渲染
+root.tsx renders
   ↓
-useSettingsSubscription() 订阅 /api/settings/stream (SSE)
+useSettingsSubscription() subscribes to /api/settings/stream (SSE)
   ↓
-后端推送 Settings 对象
+Backend pushes the Settings object
   ↓
-useSettingsStore.setSettings() 更新全局状态
+useSettingsStore.setSettings() updates global state
   ↓
-所有组件响应式更新 (助手、模型、提供商等)
+All components update reactively (assistants, models, providers, etc.)
 ```
 
-#### 对话加载流程
+#### Loading a conversation
 
 ```
-用户选择/创建对话
+User selects/creates a conversation
   ↓
-GET /api/conversations/:id (获取初始快照)
+GET /api/conversations/:id (initial snapshot)
   ↓
-返回 ConversationDto (完整消息树)
+Returns ConversationDto (full message tree)
   ↓
-建立 SSE 连接: GET /api/conversations/:id/stream
+Opens an SSE connection: GET /api/conversations/:id/stream
   ↓
-后端推送事件:
-  - ConversationSnapshotEventDto (大更新 - 完整快照)
-  - ConversationNodeUpdateEventDto (增量更新 - 节点变化)
+Backend pushes events:
+  - ConversationSnapshotEventDto (large update - full snapshot)
+  - ConversationNodeUpdateEventDto (incremental update - node changes)
   ↓
-UI 实时渲染消息和生成进度
+UI renders messages and generation progress live
 ```
 
-#### 消息发送流程
+#### Sending a message
 
 ```
-用户点击发送
+User clicks send
   ↓
-useChatInputStore.getSubmitParts(conversationId)  // 构建消息部分
+useChatInputStore.getSubmitParts(conversationId)  // Build the message parts
   ↓
 POST /api/conversations/:id/send
   body: { parts: UIMessagePart[] }
   ↓
-后端处理并启动生成
+Backend processes it and starts generation
   ↓
-SSE 流推送:
-  - node_update 事件 (每个 token 或部分)
+SSE stream pushes:
+  - node_update events (per token or part)
   - conversation.isGenerating = true → false
   ↓
-UI 实时显示流式响应
+UI shows the streamed response live
   ↓
-生成完成后 useChatInputStore.clearDraft(conversationId)
+After generation useChatInputStore.clearDraft(conversationId)
 ```
 
 ### Custom Hooks Patterns
 
 #### useConversationList
 
-对话列表管理 hook，支持分页和实时更新：
+Conversation list hook with paging and live updates:
 
 ```typescript
 const {
-  conversations,      // 对话列表
-  activeId,           // 当前选中的对话 ID
-  setActiveId,        // 设置当前对话
-  loading,            // 加载状态
-  error,              // 错误信息
-  hasMore,            // 是否有更多
-  loadMore,           // 加载更多
-  refreshList,        // 刷新列表
-  updateConversationSummary,  // 增量更新
+  conversations,      // Conversation list
+  activeId,           // Currently selected conversation ID
+  setActiveId,        // Set the current conversation
+  loading,            // Loading state
+  error,              // Error message
+  hasMore,            // Whether there are more
+  loadMore,           // Load more
+  refreshList,        // Refresh the list
+  updateConversationSummary,  // Incremental update
 } = useConversationList({
   currentAssistantId,
-  routeId,            // 当前路由的对话 ID
+  routeId,            // Conversation ID of the current route
   autoSelectFirst: true,
   pageSize: 30,
 });
 ```
 
-**特点**:
-- 自动监听助手切换并刷新
-- 支持无限滚动分页
-- SSE 事件驱动的增量更新
-- 排序: 已固定对话在前，其余按更新时间降序
+**Notes**:
+- Automatically refreshes when the assistant changes
+- Supports infinite-scroll paging
+- Incremental updates driven by SSE events
+- Sorting: pinned conversations first, the rest by update time descending
 
 #### useCurrentAssistant / useCurrentModel
 
-从 Settings store 提取当前助手和模型信息：
+Extract the current assistant and model from the Settings store:
 
 ```typescript
 const { currentAssistant, currentAssistantId } = useCurrentAssistant();
@@ -567,76 +526,76 @@ const { currentModel, currentProvider } = useCurrentModel();
 ### Static File Serving
 
 ```
-构建产物流向:
+Build output flow:
 web-ui/build/client/
 ├── index.html
 ├── assets/*.js
 └── assets/*.css
     ↓ (copy.ts)
 ../web/src/main/resources/static/
-    ↓ (Ktor 静态文件路由)
-用户访问 http://localhost:8080/
+    ↓ (Ktor static file route)
+User visits http://localhost:8080/
 ```
 
 ### API Endpoints
 
-所有 API 端点定义在 `web` 模块的 Kotlin 代码中：
-- `GET /api/settings/stream` - 设置 SSE 流
-- `GET /api/conversations` - 对话列表
-- `GET /api/conversations/:id` - 获取对话
-- `GET /api/conversations/:id/stream` - 对话 SSE 流
-- `POST /api/conversations/:id/send` - 发送消息
-- `POST /api/files/upload` - 文件上传
-- `GET /api/files/path/*` - 文件访问
+All API endpoints are defined in the Kotlin code of the `web` module:
+- `GET /api/settings/stream` - settings SSE stream
+- `GET /api/conversations` - conversation list
+- `GET /api/conversations/:id` - get a conversation
+- `GET /api/conversations/:id/stream` - conversation SSE stream
+- `POST /api/conversations/:id/send` - send a message
+- `POST /api/files/upload` - file upload
+- `GET /api/files/path/*` - file access
 
 ### Type Synchronization Checklist
 
-修改类型时的检查清单：
+When changing types:
 
-- [ ] 更新 TypeScript 类型 (`app/types/`)
-- [ ] 更新对应的 Kotlin 类型（参考上方类型映射表）
-- [ ] 运行 `pnpm run typecheck` 确保前端类型正确
-- [ ] 在 Kotlin 端运行类型检查
-- [ ] 测试前后端数据序列化/反序列化
-- [ ] 更新相关组件的类型守卫 (`app/types/helpers.ts`)
+- [ ] Update the TypeScript types (`app/types/`)
+- [ ] Update the matching Kotlin types (see the mapping table above)
+- [ ] Run `pnpm run typecheck` to check the frontend types
+- [ ] Run type checks on the Kotlin side
+- [ ] Test serialization/deserialization between frontend and backend
+- [ ] Update related type guards (`app/types/helpers.ts`)
 
 ## Performance Optimization
 
-- **代码分割**: React Router 7 自动按路由分割
-- **Tree Shaking**: Tailwind v4 + Vite 自动移除未使用的样式和代码
-- **选择性订阅**: Zustand store 使用选择器避免不必要的重新渲染
-- **虚拟滚动**: 对话列表使用 `react-infinite-scroll-component`
-- **SSE 流式更新**: 减少 API 轮询，实时推送数据
+- **Code splitting**: React Router 7 splits by route automatically
+- **Tree shaking**: Tailwind v4 + Vite remove unused styles and code
+- **Selective subscriptions**: Zustand selectors avoid unnecessary re-renders
+- **Virtual scrolling**: the conversation list uses `react-infinite-scroll-component`
+- **SSE streaming updates**: fewer API polls, data pushed in real time
 
 ## Troubleshooting
 
-### 开发服务器启动失败
+### Dev server fails to start
 
-检查端口 5173 是否被占用：
+Check whether port 5173 is in use:
 ```bash
-lsof -ti:5173 | xargs kill -9  # 杀掉占用进程
+lsof -ti:5173 | xargs kill -9  # Kill the process using it
 pnpm run dev
 ```
 
-### API 请求失败 (开发环境)
+### API requests fail (development)
 
-确保 Kotlin 后端在 8080 端口运行：
+Make sure the Kotlin backend is running on port 8080:
 ```bash
-# 在 Kotlin 项目目录
+# In the Kotlin project directory
 ./gradlew :web:run
 ```
 
-### 类型错误
+### Type errors
 
-运行类型生成和检查：
+Run type generation and checking:
 ```bash
 pnpm run typecheck
-# 检查 .react-router/types/ 下生成的类型
+# Check the generated types under .react-router/types/
 ```
 
-### 构建失败
+### Build fails
 
-清理缓存和重新安装依赖：
+Clear caches and reinstall dependencies:
 ```bash
 rm -rf node_modules .react-router build
 pnpm install

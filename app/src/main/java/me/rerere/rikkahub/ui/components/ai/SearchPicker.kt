@@ -126,7 +126,7 @@ fun SearchPickerButton(
             sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
         ) {
             var selectingProvider by remember { mutableStateOf(false) }
-            // 在服务商选择页时，返回键回到上一页而不是关闭 sheet
+            // On the provider selection page, the back key returns to the previous page instead of closing the sheet
             BackHandler(enabled = selectingProvider) {
                 selectingProvider = false
             }
@@ -179,12 +179,12 @@ private fun SearchPicker(
     val navBackStack = LocalNavController.current
 
     val provider = model?.findProvider(settings.providers)
-    // Google 和使用 Responses API 的 OpenAI Provider 支持内置搜索
+    // Google and OpenAI providers using the Responses API support built-in search
     val supportsBuiltInSearch = provider is ProviderSetting.Google ||
         provider is ProviderSetting.OpenAI && provider.useResponseApi
-    // 模型是否已开启内置搜索（可能是不支持的模型残留的孤儿状态）
+    // Whether built-in search is enabled on the model (may be an orphaned state left over from an unsupported model)
     val hasBuiltInSearchEnabled = model?.tools?.contains(BuiltInTools.Search) == true
-    // 模型支持内置搜索，或已开启内置搜索（后者保证残留状态也能被关闭）时显示模型搜索选项
+    // Show the model search option when the model supports built-in search or has it enabled (the latter ensures a leftover state can be turned off)
     val showModelSearch = model != null && (supportsBuiltInSearch || hasBuiltInSearchEnabled)
     val currentMode = when {
         hasBuiltInSearchEnabled -> SearchMode.BUILT_IN

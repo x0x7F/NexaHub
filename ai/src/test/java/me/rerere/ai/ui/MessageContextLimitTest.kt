@@ -30,7 +30,7 @@ class MessageContextLimitTest {
     }
 
     /**
-     * limit 过小时无法构造滞回, 但至少不能崩溃, 也不能把上下文清空
+     * When limit is too small no hysteresis is possible, but it must not crash or empty the context
      */
     @Test
     fun `limitContext with tiny limit should degrade gracefully`() {
@@ -58,7 +58,7 @@ class MessageContextLimitTest {
     }
 
     /**
-     * 核心性质: 同一级台阶内追加消息时截断起点必须保持不动, 否则请求前缀每轮都变, 提示词缓存必然失效
+     * Core property: appending messages within the same step must not move the truncation start, otherwise the request prefix changes every turn and the prompt cache always misses
      */
     @Test
     fun `limitContext should keep the same start message while within one step`() {

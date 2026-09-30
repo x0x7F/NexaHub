@@ -119,10 +119,10 @@ private fun AssistantPickerSheet(
     val scope = rememberCoroutineScope()
     val defaultAssistantName = stringResource(R.string.assistant_page_default_assistant)
 
-    // 标签过滤状态
+    // Tag filter state
     var selectedTagIds by remember { mutableStateOf(emptySet<Uuid>()) }
 
-    // 根据选中的标签过滤助手
+    // Filter assistants by the selected tags
     val filteredAssistants = remember(settings.assistants, selectedTagIds) {
         if (selectedTagIds.isEmpty()) {
             settings.assistants
@@ -150,7 +150,7 @@ private fun AssistantPickerSheet(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // 标签过滤器
+            // Tag filter
             if (settings.assistantTags.isNotEmpty()) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -174,7 +174,7 @@ private fun AssistantPickerSheet(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // 助手列表
+            // Assistant list
             val navController = LocalNavController.current
             LazyColumn(
                 modifier = Modifier.weight(1f),

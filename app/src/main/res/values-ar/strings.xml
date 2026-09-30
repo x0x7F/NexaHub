@@ -707,12 +707,12 @@
   <string name="setting_asr_configure_segment_duration">مدة المقطع</string>
   <string name="setting_asr_configure_silence_duration">مدة الصمت</string>
   <string name="setting_asr_configure_silence_duration_desc">مدة الصمت التي تنهي الدور، بالمللي ثانية</string>
-  <string name="setting_asr_configure_step_api_key_desc">مفتاح API الخاص بـ StepFun (阶跃星辰)، يتم الحصول عليه من https://platform.stepfun.com/interface-key</string>
+  <string name="setting_asr_configure_step_api_key_desc">مفتاح API الخاص بـ StepFun، يتم الحصول عليه من https://platform.stepfun.com/interface-key</string>
   <string name="setting_asr_configure_step_base_url_desc">عنوان URL الأساسي لـ Step ASR. استخدم https://api.stepfun.com للصين، وhttps://api.stepfun.ai للاستخدام الدولي</string>
   <string name="setting_asr_configure_step_hotwords">الكلمات الساخنة</string>
   <string name="setting_asr_configure_step_hotwords_desc">قائمة كلمات ساخنة مفصولة بفواصل لتعزيز دقة التعرف على أسماء العلم / المصطلحات المتخصصة</string>
   <string name="setting_asr_configure_step_itn">تفعيل ITN</string>
-  <string name="setting_asr_configure_step_itn_desc">تطبيع النص العكسي: تحويل الأرقام المنطوقة إلى أرقام (مثال: 三百 ← 300)</string>
+  <string name="setting_asr_configure_step_itn_desc">تطبيع النص العكسي: تحويل الأرقام المنطوقة إلى أرقام (مثال: three hundred ← 300)</string>
   <string name="setting_asr_configure_step_language_desc">تلميح اختياري للغة: auto أو zh أو en. اتركه فارغًا لاستخدام الإعداد الافتراضي للخادم (auto)</string>
   <string name="setting_asr_configure_step_model_desc">اسم نموذج Step ASR، مثل stepaudio-2.5-asr (الرائد، الأقل تكلفة) أو step-asr</string>
   <string name="setting_asr_configure_step_sample_rate_desc">معدل أخذ العينات لتسجيل PCM بوحدة Hz، يُوصى بـ 16000 لـ ASR</string>

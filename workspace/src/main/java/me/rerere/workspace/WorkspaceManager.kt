@@ -14,7 +14,7 @@ class WorkspaceManager(
 ) {
     private val fileSystem = WorkspaceFileSystem(config)
 
-    // 按 target 长度降序, 保证 /a/b 优先于 /a 匹配
+    // Sort by target length descending, so /a/b matches before /a
     private val sortedBindMounts = bindMounts.sortedByDescending { it.target.trimEnd('/').length }
 
     init {
@@ -112,11 +112,11 @@ class WorkspaceManager(
     }
 
     /**
-     * 把 Rootfs 内的绝对路径映射到宿主机上的真实文件。
+     * Map an absolute path inside the Rootfs to the real file on the host.
      *
-     * bind mount 的 source 本身就是 Android 侧的普通目录, 因此 /skills 这类挂载路径
-     * 可以直接用文件 IO 访问, 无需经过 PRoot; 只是 Rootfs 目录里对应位置是个空挂载点,
-     * 按 [WorkspaceStorageArea.LINUX] 解析必然落空。
+     * The source of a bind mount is itself a regular directory on the Android side, so mount paths such as /skills
+     * can be accessed with plain file IO without going through PRoot; the corresponding location in the Rootfs directory is just an empty mount point,
+     * so resolving it via [WorkspaceStorageArea.LINUX] would always come up empty.
      */
     fun resolveRootfsPath(root: String, path: String): RootfsLocation {
         val trimmed = path.trim().trimEnd('/').ifBlank { "/" }
@@ -137,7 +137,7 @@ class WorkspaceManager(
             )
         }
 
-        // 内核伪文件系统: 显式拒绝, 而不是回落到一个必然读不到的物理路径
+        // Kernel pseudo-filesystems: reject explicitly, instead of falling back to a physical path that can never be read
         KERNEL_FS_MOUNTS.firstOrNull { trimmed == it || trimmed.startsWith("$it/") }?.let {
             error("$it is a kernel filesystem and cannot be read as a file, use workspace_shell instead")
         }
@@ -248,17 +248,17 @@ class WorkspaceManager(
         private const val TEMP_DIR = "tmp"
         const val DEFAULT_COMMAND_TIMEOUT_MS = 30_000L
 
-        /** Rootfs 内工作区文件区的挂载点 */
+        /** Mount point of the workspace files area inside the Rootfs */
         const val ROOTFS_WORKSPACE_DIR = "/workspace"
 
-        /** 由宿主机透传的内核伪文件系统, 只能通过 shell 访问 */
+        /** Kernel pseudo-filesystems passed through from the host, only accessible through the shell */
         val KERNEL_FS_MOUNTS = listOf("/dev", "/proc", "/sys")
 
         private val ROOT_NAME_REGEX = Regex("[A-Za-z0-9._-]+")
     }
 }
 
-/** Rootfs 内绝对路径在宿主机上的落点 */
+/** Where an absolute path inside the Rootfs lands on the host */
 data class RootfsLocation(
     val rootDir: File,
     val relativePath: String,
