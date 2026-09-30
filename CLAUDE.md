@@ -9,7 +9,6 @@ UIMessage, MessageNode, Message Transformers) and i18n rules. This file adds onl
 
 ## Build prerequisites
 
-- `app/google-services.json` must exist or the app module won't build.
 - Git submodule: `material3/material-color-utilities` — run `git submodule update --init --recursive`.
 - The `web` module's `preBuild` depends on `buildWebUi`, which runs `pnpm run build` in `web-ui/` (it does
   **not** install deps). Run `pnpm install` in `web-ui/` first, with Node + pnpm on PATH, or any Android build fails.
